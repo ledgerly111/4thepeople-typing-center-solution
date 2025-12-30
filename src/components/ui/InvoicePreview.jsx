@@ -22,6 +22,14 @@ const InvoicePreview = ({ invoice, onClose }) => {
         html2pdf().set(opt).from(element).save();
     };
 
+    // Calculate totals from items if available
+    const totalServiceFee = invoice.serviceFee || (Array.isArray(invoice.items)
+        ? invoice.items.reduce((sum, item) => sum + (item.serviceFee || 0), 0)
+        : 0);
+    const totalGovtFee = invoice.govtFee || (Array.isArray(invoice.items)
+        ? invoice.items.reduce((sum, item) => sum + (item.govtFee || 0), 0)
+        : 0);
+
     return (
         <div className="invoice-preview-overlay">
             {/* Action Bar - Hidden in Print */}
@@ -82,7 +90,9 @@ const InvoicePreview = ({ invoice, onClose }) => {
                         <tr>
                             <th>#</th>
                             <th>Description</th>
-                            <th className="text-right">Amount</th>
+                            <th className="text-right">Service</th>
+                            <th className="text-right">Govt Fee</th>
+                            <th className="text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,12 +100,16 @@ const InvoicePreview = ({ invoice, onClose }) => {
                             <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>{item.name}</td>
-                                <td className="text-right">AED {item.price.toFixed(2)}</td>
+                                <td className="text-right">AED {(item.serviceFee || 0).toFixed(2)}</td>
+                                <td className="text-right">AED {(item.govtFee || 0).toFixed(2)}</td>
+                                <td className="text-right">AED {(item.price || item.serviceFee + item.govtFee || 0).toFixed(2)}</td>
                             </tr>
                         )) : (
                             <tr>
                                 <td>1</td>
                                 <td>Services</td>
+                                <td className="text-right">-</td>
+                                <td className="text-right">-</td>
                                 <td className="text-right">AED {invoice.total.toFixed(2)}</td>
                             </tr>
                         )}
@@ -104,16 +118,20 @@ const InvoicePreview = ({ invoice, onClose }) => {
 
                 {/* Totals */}
                 <div className="invoice-totals">
-                    <div className="totals-row">
-                        <span>Subtotal:</span>
-                        <span>AED {invoice.total.toFixed(2)}</span>
-                    </div>
-                    <div className="totals-row muted">
-                        <span>VAT (0%):</span>
-                        <span>AED 0.00</span>
-                    </div>
+                    {(totalServiceFee > 0 || totalGovtFee > 0) && (
+                        <>
+                            <div className="totals-row muted">
+                                <span>Service Charges:</span>
+                                <span>AED {totalServiceFee.toFixed(2)}</span>
+                            </div>
+                            <div className="totals-row muted">
+                                <span>Government Fees:</span>
+                                <span>AED {totalGovtFee.toFixed(2)}</span>
+                            </div>
+                        </>
+                    )}
                     <div className="totals-row total">
-                        <span>Total:</span>
+                        <span>Grand Total:</span>
                         <span>AED {invoice.total.toFixed(2)}</span>
                     </div>
                     {invoice.status === 'Paid' && invoice.amountReceived > 0 && (

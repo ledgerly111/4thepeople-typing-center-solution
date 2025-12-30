@@ -1,17 +1,17 @@
 import React from 'react';
 import Card from '../components/ui/Card';
-import { useTheme, ACCENT_COLORS } from '../contexts/ThemeContext';
-import { Sun, Moon, Palette, Check } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { Sun, Moon, Check } from 'lucide-react';
 
 const Settings = () => {
-    const { theme, toggleTheme, accentColor, changeAccentColor } = useTheme();
+    const { theme, toggleTheme } = useTheme();
 
     return (
         <div>
             <h2 style={{ marginBottom: '1rem' }}>Settings</h2>
 
             {/* Theme Mode */}
-            <Card title="Theme Mode">
+            <Card title="Theme">
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button
                         onClick={() => theme !== 'light' && toggleTheme()}
@@ -21,19 +21,20 @@ const Settings = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1rem',
+                            padding: '1.25rem',
                             border: `2px solid ${theme === 'light' ? 'var(--accent)' : 'var(--border)'}`,
                             borderRadius: '12px',
                             backgroundColor: theme === 'light' ? 'var(--bg-accent)' : 'transparent',
                             cursor: 'pointer',
                             color: 'var(--text-primary)',
                             fontFamily: 'inherit',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            transition: 'all 0.2s'
                         }}
                     >
-                        <Sun size={24} />
+                        <Sun size={28} />
                         Light
-                        {theme === 'light' && <Check size={16} style={{ color: 'var(--accent)' }} />}
+                        {theme === 'light' && <Check size={18} style={{ color: 'var(--accent)' }} />}
                     </button>
                     <button
                         onClick={() => theme !== 'dark' && toggleTheme()}
@@ -43,72 +44,21 @@ const Settings = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1rem',
+                            padding: '1.25rem',
                             border: `2px solid ${theme === 'dark' ? 'var(--accent)' : 'var(--border)'}`,
                             borderRadius: '12px',
                             backgroundColor: theme === 'dark' ? 'var(--bg-accent)' : 'transparent',
                             cursor: 'pointer',
                             color: 'var(--text-primary)',
                             fontFamily: 'inherit',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            transition: 'all 0.2s'
                         }}
                     >
-                        <Moon size={24} />
+                        <Moon size={28} />
                         Dark
-                        {theme === 'dark' && <Check size={16} style={{ color: 'var(--accent)' }} />}
+                        {theme === 'dark' && <Check size={18} style={{ color: 'var(--accent)' }} />}
                     </button>
-                </div>
-            </Card>
-
-            {/* Accent Color */}
-            <Card title="Accent Color" style={{ marginTop: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <Palette size={18} style={{ color: 'var(--text-muted)' }} />
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                        Choose your preferred accent color
-                    </span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                    {ACCENT_COLORS.map((color) => (
-                        <button
-                            key={color.value}
-                            onClick={() => changeAccentColor(color.value)}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.75rem',
-                                border: `2px solid ${accentColor === color.value ? color.value : 'var(--border)'}`,
-                                borderRadius: '10px',
-                                backgroundColor: accentColor === color.value ? `${color.light}` : 'transparent',
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                                transition: 'all 0.2s ease'
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    backgroundColor: color.value,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                {accentColor === color.value && <Check size={16} color="white" />}
-                            </div>
-                            <span style={{
-                                fontSize: '0.75rem',
-                                fontWeight: '500',
-                                color: accentColor === color.value ? color.value : 'var(--text-secondary)'
-                            }}>
-                                {color.name}
-                            </span>
-                        </button>
-                    ))}
                 </div>
             </Card>
 

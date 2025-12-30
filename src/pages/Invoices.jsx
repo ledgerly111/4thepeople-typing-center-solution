@@ -31,7 +31,7 @@ const Invoices = () => {
         .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
     const addItem = () => {
-        setLineItems([...lineItems, { serviceId: '', price: 0, name: '' }]);
+        setLineItems([...lineItems, { serviceId: '', serviceFee: 0, govtFee: 0, price: 0, name: '' }]);
     };
 
     const updateItem = (index, serviceId) => {
@@ -39,6 +39,8 @@ const Invoices = () => {
         const service = MOCK_SERVICES.find(s => s.id === parseInt(serviceId));
         newItems[index] = {
             serviceId: serviceId,
+            serviceFee: service ? service.serviceFee : 0,
+            govtFee: service ? service.govtFee : 0,
             price: service ? service.price : 0,
             name: service ? service.name : ''
         };
@@ -49,8 +51,11 @@ const Invoices = () => {
         setLineItems(lineItems.filter((_, i) => i !== index));
     };
 
-    const total = lineItems.reduce((sum, item) => sum + Number(item.price), 0);
-    const change = amountReceived && paymentType === 'Cash' ? Math.max(0, Number(amountReceived) - total) : 0;
+    // Calculate totals
+    const totalServiceFee = lineItems.reduce((sum, item) => sum + Number(item.serviceFee || 0), 0);
+    const totalGovtFee = lineItems.reduce((sum, item) => sum + Number(item.govtFee || 0), 0);
+    const grandTotal = totalServiceFee + totalGovtFee;
+    const change = amountReceived && paymentType === 'Cash' ? Math.max(0, Number(amountReceived) - grandTotal) : 0;
 
     // Get today's date in correct format
     const getTodayDate = () => {
@@ -72,18 +77,25 @@ const Invoices = () => {
         }
 
         const customer = MOCK_CUSTOMERS.find(c => c.id === parseInt(selectedCustomer));
-        const receivedAmount = paymentType === 'Cash' ? (Number(amountReceived) || total) : 0;
+        const receivedAmount = paymentType === 'Cash' ? (Number(amountReceived) || grandTotal) : 0;
 
         const newInvoice = addInvoice({
             customerName: customer ? customer.name : 'Unknown',
             customerMobile: customer ? customer.mobile : '',
             customerEmail: customer ? customer.email : '',
-            total: total,
+            serviceFee: totalServiceFee,
+            govtFee: totalGovtFee,
+            total: grandTotal,
             amountReceived: receivedAmount,
-            change: paymentType === 'Cash' ? Math.max(0, receivedAmount - total) : 0,
+            change: paymentType === 'Cash' ? Math.max(0, receivedAmount - grandTotal) : 0,
             status: paymentType === 'Cash' ? 'Paid' : 'Pending',
             paymentType: paymentType,
-            items: lineItems.map(item => ({ name: item.name, price: item.price })),
+            items: lineItems.map(item => ({
+                name: item.name,
+                serviceFee: item.serviceFee,
+                govtFee: item.govtFee,
+                price: item.price
+            })),
             date: getTodayDate()
         });
 
@@ -110,7 +122,7 @@ const Invoices = () => {
 
     const serviceOptions = MOCK_SERVICES.map(s => ({
         id: s.id,
-        name: `${s.name} - AED ${s.price}`
+        name: `${s.name} - AED ${s.price} (Service: ${s.serviceFee} + Govt: ${s.govtFee})`
     }));
 
     // Format date for display
@@ -328,50 +340,74 @@ const Invoices = () => {
                         </div>
                     </Card>
 
-                    <Card title="Summary">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span>Subtotal</span>
-                            <span>AED {total}</span>
+                    <Card title="Bill Summary">
+                        {/* Fee Breakdown */}
+                        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: 'var(--bg-accent)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem', letterSpacing: '0.5px' }}>
+                                Fee Breakdown
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span>Service Charge (Our Fee)</span>
+                                <span style={{ fontWeight: '600' }}>AED {totalServiceFee}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Government Fee</span>
+                                <span style={{ fontWeight: '600' }}>AED {totalGovtFee}</span>
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--text-muted)' }}>
-                            <span>VAT (0%)</span>
-                            <span>AED 0</span>
-                        </div>
+
+                        {/* Grand Total */}
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
-                            paddingTop: '1rem',
-                            borderTop: '2px dashed var(--border)',
+                            padding: '1rem',
+                            backgroundColor: 'var(--accent)',
+                            color: 'white',
+                            borderRadius: '8px',
                             fontSize: '1.25rem',
                             fontWeight: '700'
                         }}>
-                            <span>Total</span>
-                            <span style={{ color: 'var(--accent)' }}>AED {total}</span>
+                            <span>Grand Total</span>
+                            <span>AED {grandTotal}</span>
                         </div>
 
                         {/* Amount Received - Only for Cash payments */}
-                        {paymentType === 'Cash' && total > 0 && (
-                            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--bg-accent)', borderRadius: '6px' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
-                                    Amount Received
+                        {paymentType === 'Cash' && grandTotal > 0 && (
+                            <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
+                                    💰 Amount Received from Customer
                                 </label>
                                 <input
                                     type="number"
                                     className="input"
-                                    placeholder={`Enter amount (min AED ${total})`}
+                                    placeholder={`Enter amount received (min AED ${grandTotal})`}
                                     value={amountReceived}
                                     onChange={(e) => setAmountReceived(e.target.value)}
-                                    style={{ marginBottom: '0.5rem' }}
+                                    style={{ marginBottom: '0.75rem', fontSize: '1.1rem', fontWeight: '600' }}
                                 />
-                                {amountReceived && Number(amountReceived) >= total && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', color: 'var(--success)' }}>
-                                        <span>Change to Return:</span>
+                                {amountReceived && Number(amountReceived) >= grandTotal && (
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        padding: '0.75rem',
+                                        backgroundColor: 'var(--success)',
+                                        color: 'white',
+                                        borderRadius: '6px',
+                                        fontWeight: '700'
+                                    }}>
+                                        <span>💵 Change to Return:</span>
                                         <span>AED {change.toFixed(2)}</span>
                                     </div>
                                 )}
-                                {amountReceived && Number(amountReceived) < total && (
-                                    <div style={{ color: 'var(--danger)', fontSize: '0.875rem' }}>
-                                        Amount received is less than total
+                                {amountReceived && Number(amountReceived) < grandTotal && (
+                                    <div style={{
+                                        padding: '0.75rem',
+                                        backgroundColor: 'var(--danger)',
+                                        color: 'white',
+                                        borderRadius: '6px',
+                                        fontSize: '0.875rem'
+                                    }}>
+                                        ⚠️ Amount received is less than total (AED {(grandTotal - Number(amountReceived)).toFixed(2)} short)
                                     </div>
                                 )}
                             </div>
@@ -380,7 +416,7 @@ const Invoices = () => {
                         <Button
                             onClick={handleGenerateInvoice}
                             style={{ width: '100%', marginTop: '1.5rem' }}
-                            disabled={paymentType === 'Cash' && amountReceived && Number(amountReceived) < total}
+                            disabled={paymentType === 'Cash' && amountReceived && Number(amountReceived) < grandTotal}
                         >
                             <Printer size={16} /> Generate Invoice
                         </Button>

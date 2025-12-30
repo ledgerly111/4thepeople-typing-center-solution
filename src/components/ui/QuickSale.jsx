@@ -1,0 +1,212 @@
+import React, { useState } from 'react';
+import Modal from './Modal';
+import Button from './Button';
+import SearchableSelect from './SearchableSelect';
+import { MOCK_SERVICES } from '../../services/mockData';
+import { Plus, Trash2, Printer, Check } from 'lucide-react';
+
+const QuickSale = ({ isOpen, onClose, onComplete }) => {
+    const [lineItems, setLineItems] = useState([]);
+    const [amountReceived, setAmountReceived] = useState('');
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [receiptData, setReceiptData] = useState(null);
+
+    const serviceOptions = MOCK_SERVICES.map(s => ({
+        id: s.id,
+        name: `${s.name} - AED ${s.price}`
+    }));
+
+    const addItem = () => {
+        setLineItems([...lineItems, { serviceId: '', price: 0, name: '' }]);
+    };
+
+    const updateItem = (index, serviceId) => {
+        const newItems = [...lineItems];
+        const service = MOCK_SERVICES.find(s => s.id === parseInt(serviceId));
+        newItems[index] = {
+            serviceId: serviceId,
+            price: service ? service.price : 0,
+            name: service ? service.name : ''
+        };
+        setLineItems(newItems);
+    };
+
+    const removeItem = (index) => {
+        setLineItems(lineItems.filter((_, i) => i !== index));
+    };
+
+    const total = lineItems.reduce((sum, item) => sum + Number(item.price), 0);
+    const change = amountReceived ? Number(amountReceived) - total : 0;
+
+    const handleComplete = () => {
+        if (lineItems.length === 0 || lineItems.some(item => !item.serviceId)) {
+            alert('Please add at least one service');
+            return;
+        }
+
+        const receipt = {
+            items: lineItems.map(item => ({ name: item.name, price: item.price })),
+            total: total,
+            amountReceived: Number(amountReceived) || total,
+            change: change > 0 ? change : 0
+        };
+
+        setReceiptData({
+            ...receipt,
+            id: `QS-${Date.now()}`,
+            date: new Date().toLocaleString()
+        });
+        setShowReceipt(true);
+
+        if (onComplete) {
+            onComplete(receipt);
+        }
+    };
+
+    const handlePrintReceipt = () => {
+        window.print();
+    };
+
+    const handleClose = () => {
+        setLineItems([]);
+        setAmountReceived('');
+        setShowReceipt(false);
+        setReceiptData(null);
+        onClose();
+    };
+
+    if (showReceipt && receiptData) {
+        return (
+            <div className="modal-overlay" onClick={handleClose}>
+                <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '350px' }}>
+                    <div className="receipt-content" id="receipt-print">
+                        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                            <h2 style={{ margin: 0, fontSize: '1.25rem' }}>4 The People</h2>
+                            <p style={{ margin: '0.25rem 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                Typing Center Services
+                            </p>
+                            <p style={{ margin: '0.5rem 0', fontSize: '0.75rem' }}>
+                                {receiptData.date}
+                            </p>
+                        </div>
+
+                        <div style={{ borderTop: '1px dashed var(--border)', borderBottom: '1px dashed var(--border)', padding: '0.75rem 0', margin: '0.5rem 0' }}>
+                            {receiptData.items.map((item, index) => (
+                                <div key={index} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                    <span>{item.name}</span>
+                                    <span>AED {item.price}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ padding: '0.5rem 0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', fontSize: '1rem' }}>
+                                <span>Total:</span>
+                                <span>AED {receiptData.total}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                <span>Received:</span>
+                                <span>AED {receiptData.amountReceived}</span>
+                            </div>
+                            {receiptData.change > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)', fontSize: '0.875rem' }}>
+                                    <span>Change:</span>
+                                    <span>AED {receiptData.change}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ textAlign: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)' }}>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                Thank you for your visit!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="modal-footer no-print">
+                        <Button variant="secondary" onClick={handlePrintReceipt}>
+                            <Printer size={16} /> Print
+                        </Button>
+                        <Button onClick={handleClose}>
+                            <Check size={16} /> Done
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={handleClose}
+            title="Quick Sale"
+            footer={
+                <>
+                    <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleComplete}>
+                        <Check size={16} /> Complete Sale
+                    </Button>
+                </>
+            }
+        >
+            <div className="form-group">
+                <label className="form-label">Services</label>
+                {lineItems.map((item, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                            <SearchableSelect
+                                options={serviceOptions}
+                                value={item.serviceId}
+                                onChange={(val) => updateItem(index, val)}
+                                placeholder="Search service..."
+                                displayKey="name"
+                                valueKey="id"
+                            />
+                        </div>
+                        <button
+                            className="btn-icon"
+                            onClick={() => removeItem(index)}
+                            style={{ color: 'var(--danger)' }}
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                ))}
+                <Button variant="secondary" onClick={addItem} style={{ width: '100%' }}>
+                    <Plus size={16} /> Add Service
+                </Button>
+            </div>
+
+            <div style={{
+                padding: '1rem',
+                backgroundColor: 'var(--bg-accent)',
+                borderRadius: '6px',
+                marginBottom: '1rem'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: '700' }}>
+                    <span>Total:</span>
+                    <span style={{ color: 'var(--accent)' }}>AED {total}</span>
+                </div>
+            </div>
+
+            <div className="form-group">
+                <label className="form-label">Amount Received (Optional)</label>
+                <input
+                    type="number"
+                    className="input"
+                    placeholder="Enter amount..."
+                    value={amountReceived}
+                    onChange={(e) => setAmountReceived(e.target.value)}
+                />
+                {amountReceived && Number(amountReceived) >= total && (
+                    <div style={{ marginTop: '0.5rem', color: 'var(--success)', fontWeight: '600' }}>
+                        Change: AED {(Number(amountReceived) - total).toFixed(2)}
+                    </div>
+                )}
+            </div>
+        </Modal>
+    );
+};
+
+export default QuickSale;

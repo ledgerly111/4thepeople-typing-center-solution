@@ -1,37 +1,27 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
 import QuickSale from '../components/ui/QuickSale';
 import { useStore } from '../contexts/StoreContext';
 import { Plus, TrendingUp, Users, FileText, Zap, List, DollarSign, Clock, AlertCircle } from 'lucide-react';
 
 const Dashboard = () => {
     const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false);
-    const { getTodaysSales, invoices, quickSales, addQuickSale } = useStore();
+    const {
+        getTodaysSales,
+        getRecentTransactions,
+        getPendingAmount,
+        getPendingCount,
+        invoices,
+        quickSales,
+        addQuickSale
+    } = useStore();
 
     const todaySales = getTodaysSales();
-    const pendingInvoices = invoices.filter(inv => inv.status === 'Pending').length;
-    const pendingAmount = invoices.filter(inv => inv.status === 'Pending').reduce((sum, inv) => sum + inv.total, 0);
+    const pendingAmount = getPendingAmount();
+    const pendingCount = getPendingCount();
     const totalTransactions = invoices.length + quickSales.length;
-
-    // Get recent transactions (last 5)
-    const recentTransactions = [
-        ...invoices.slice(0, 3).map(inv => ({
-            customer: inv.customerName,
-            service: Array.isArray(inv.items) && inv.items[0] ? inv.items[0].name : 'Services',
-            amount: inv.total,
-            status: inv.status,
-            date: inv.date
-        })),
-        ...quickSales.slice(0, 2).map(qs => ({
-            customer: 'Walk-in',
-            service: qs.items?.[0]?.name || 'Quick Sale',
-            amount: qs.total,
-            status: 'Paid',
-            date: qs.date
-        }))
-    ].slice(0, 5);
+    const recentTransactions = getRecentTransactions(5);
 
     const handleQuickSaleComplete = (sale) => {
         addQuickSale(sale);
@@ -85,7 +75,7 @@ const Dashboard = () => {
                         <span className="currency">AED </span>{pendingAmount.toLocaleString()}
                     </div>
                     <div className="stat-change warning">
-                        <AlertCircle size={12} /> {pendingInvoices} invoices
+                        <AlertCircle size={12} /> {pendingCount} invoices
                     </div>
                 </div>
 
@@ -216,9 +206,9 @@ const Dashboard = () => {
             <Card title="Recent Activity" style={{ marginTop: '1rem' }}>
                 {recentTransactions.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {recentTransactions.map((item, index) => (
+                        {recentTransactions.map((item) => (
                             <div
-                                key={index}
+                                key={item.id}
                                 style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',

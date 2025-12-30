@@ -116,6 +116,20 @@ const InvoicePreview = ({ invoice, onClose }) => {
                         <span>Total:</span>
                         <span>AED {invoice.total.toFixed(2)}</span>
                     </div>
+                    {invoice.status === 'Paid' && invoice.amountReceived > 0 && (
+                        <>
+                            <div className="totals-row" style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed #ddd' }}>
+                                <span>Amount Received:</span>
+                                <span>AED {invoice.amountReceived.toFixed(2)}</span>
+                            </div>
+                            {invoice.change > 0 && (
+                                <div className="totals-row" style={{ color: '#2E7D32' }}>
+                                    <span>Change Given:</span>
+                                    <span>AED {invoice.change.toFixed(2)}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
 
                 {/* Footer */}

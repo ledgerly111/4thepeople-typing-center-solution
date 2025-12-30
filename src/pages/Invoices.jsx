@@ -14,6 +14,7 @@ const Invoices = () => {
     const [selectedCustomer, setSelectedCustomer] = useState('');
     const [lineItems, setLineItems] = useState([]);
     const [paymentType, setPaymentType] = useState('Cash');
+    const [amountReceived, setAmountReceived] = useState('');
     const [previewInvoice, setPreviewInvoice] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -27,7 +28,7 @@ const Invoices = () => {
             const matchesStatus = statusFilter === 'All' || inv.status === statusFilter;
             return matchesSearch && matchesStatus;
         })
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
     const addItem = () => {
         setLineItems([...lineItems, { serviceId: '', price: 0, name: '' }]);
@@ -49,6 +50,7 @@ const Invoices = () => {
     };
 
     const total = lineItems.reduce((sum, item) => sum + Number(item.price), 0);
+    const change = amountReceived && paymentType === 'Cash' ? Math.max(0, Number(amountReceived) - total) : 0;
 
     // Get today's date in correct format
     const getTodayDate = () => {
@@ -70,11 +72,15 @@ const Invoices = () => {
         }
 
         const customer = MOCK_CUSTOMERS.find(c => c.id === parseInt(selectedCustomer));
+        const receivedAmount = paymentType === 'Cash' ? (Number(amountReceived) || total) : 0;
+
         const newInvoice = addInvoice({
             customerName: customer ? customer.name : 'Unknown',
             customerMobile: customer ? customer.mobile : '',
             customerEmail: customer ? customer.email : '',
             total: total,
+            amountReceived: receivedAmount,
+            change: paymentType === 'Cash' ? Math.max(0, receivedAmount - total) : 0,
             status: paymentType === 'Cash' ? 'Paid' : 'Pending',
             paymentType: paymentType,
             items: lineItems.map(item => ({ name: item.name, price: item.price })),
@@ -85,6 +91,7 @@ const Invoices = () => {
         setSelectedCustomer('');
         setLineItems([]);
         setPaymentType('Cash');
+        setAmountReceived('');
         setView('list');
     };
 
@@ -342,7 +349,39 @@ const Invoices = () => {
                             <span style={{ color: 'var(--accent)' }}>AED {total}</span>
                         </div>
 
-                        <Button onClick={handleGenerateInvoice} style={{ width: '100%', marginTop: '1.5rem' }}>
+                        {/* Amount Received - Only for Cash payments */}
+                        {paymentType === 'Cash' && total > 0 && (
+                            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'var(--bg-accent)', borderRadius: '6px' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
+                                    Amount Received
+                                </label>
+                                <input
+                                    type="number"
+                                    className="input"
+                                    placeholder={`Enter amount (min AED ${total})`}
+                                    value={amountReceived}
+                                    onChange={(e) => setAmountReceived(e.target.value)}
+                                    style={{ marginBottom: '0.5rem' }}
+                                />
+                                {amountReceived && Number(amountReceived) >= total && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', color: 'var(--success)' }}>
+                                        <span>Change to Return:</span>
+                                        <span>AED {change.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {amountReceived && Number(amountReceived) < total && (
+                                    <div style={{ color: 'var(--danger)', fontSize: '0.875rem' }}>
+                                        Amount received is less than total
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <Button
+                            onClick={handleGenerateInvoice}
+                            style={{ width: '100%', marginTop: '1.5rem' }}
+                            disabled={paymentType === 'Cash' && amountReceived && Number(amountReceived) < total}
+                        >
                             <Printer size={16} /> Generate Invoice
                         </Button>
                     </Card>

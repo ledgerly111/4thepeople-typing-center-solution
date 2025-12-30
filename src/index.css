@@ -19,20 +19,21 @@
 }
 
 [data-theme='dark'] {
-  --bg-body: #1A1A1A;
-  --bg-card: #2D2D2D;
-  --bg-accent: #3E2723;
-  --bg-sidebar: #252525;
-  --text-primary: #FFE0B2;
-  --text-secondary: #BCAAA4;
-  --text-muted: #8D6E63;
-  --accent: #FF9800;
-  --accent-hover: #FFB74D;
-  --accent-light: #4E342E;
-  --border: #4E342E;
-  --success: #66BB6A;
-  --warning: #FFB74D;
-  --danger: #EF5350;
+  /* Dark Mode - Dark Blue */
+  --bg-body: #0D1B2A;
+  --bg-card: #1B263B;
+  --bg-accent: #1F3044;
+  --bg-sidebar: #0F1E32;
+  --text-primary: #E0E7EE;
+  --text-secondary: #A8B8C8;
+  --text-muted: #6B7D8F;
+  --accent: #F97316;
+  --accent-hover: #FB923C;
+  --accent-light: #253445;
+  --border: #2D3F55;
+  --success: #22C55E;
+  --warning: #EAB308;
+  --danger: #EF4444;
 }
 
 * {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Briefcase, FileText, List } from 'lucide-react';
+import { Home, FileText, List, Users, Settings } from 'lucide-react';
 
 const BottomNav = () => {
     const navItems = [
@@ -8,7 +8,7 @@ const BottomNav = () => {
         { icon: FileText, label: 'Invoices', path: '/invoices' },
         { icon: List, label: 'Sales', path: '/transactions' },
         { icon: Users, label: 'Customers', path: '/customers' },
-        { icon: Briefcase, label: 'Services', path: '/services' },
+        { icon: Settings, label: 'Settings', path: '/settings' },
     ];
 
     return (

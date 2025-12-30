@@ -1,6 +1,6 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Sun, Moon, Bell } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { Sun, Moon, Settings } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const Header = () => {
@@ -14,6 +14,7 @@ const Header = () => {
             case '/customers': return 'Customers';
             case '/services': return 'Services';
             case '/invoices': return 'Invoices';
+            case '/transactions': return 'Transactions';
             case '/settings': return 'Settings';
             default: return '4 The People';
         }
@@ -27,12 +28,12 @@ const Header = () => {
             </div>
 
             <div className="header-actions">
-                <button className="btn-icon" onClick={() => alert('Notifications')}>
-                    <Bell size={20} />
-                </button>
-                <button className="btn-icon" onClick={toggleTheme}>
+                <button className="btn-icon" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
                     {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                 </button>
+                <Link to="/settings" className="btn-icon desktop-only" title="Settings">
+                    <Settings size={20} />
+                </Link>
             </div>
         </header>
     );

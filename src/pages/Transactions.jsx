@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Card from '../components/ui/Card';
+import Select from '../components/ui/Select';
 import { useStore } from '../contexts/StoreContext';
 import { Search } from 'lucide-react';
 
@@ -50,7 +51,7 @@ const Transactions = () => {
             <Card style={{ marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 1 }} />
                         <input
                             type="text"
                             className="input"
@@ -60,26 +61,30 @@ const Transactions = () => {
                             style={{ paddingLeft: '2.5rem' }}
                         />
                     </div>
-                    <select
-                        className="select"
-                        value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                        style={{ minWidth: '120px' }}
-                    >
-                        <option value="All">All Types</option>
-                        <option value="Invoice">Invoice</option>
-                        <option value="Quick Sale">Quick Sale</option>
-                    </select>
-                    <select
-                        className="select"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        style={{ minWidth: '120px' }}
-                    >
-                        <option value="All">All Status</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Pending">Pending</option>
-                    </select>
+                    <div style={{ minWidth: '140px' }}>
+                        <Select
+                            options={[
+                                { value: 'All', label: 'All Types' },
+                                { value: 'Invoice', label: 'Invoice' },
+                                { value: 'Quick Sale', label: 'Quick Sale' }
+                            ]}
+                            value={typeFilter}
+                            onChange={setTypeFilter}
+                            placeholder="All Types"
+                        />
+                    </div>
+                    <div style={{ minWidth: '140px' }}>
+                        <Select
+                            options={[
+                                { value: 'All', label: 'All Status' },
+                                { value: 'Paid', label: 'Paid' },
+                                { value: 'Pending', label: 'Pending' }
+                            ]}
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            placeholder="All Status"
+                        />
+                    </div>
                 </div>
             </Card>
 

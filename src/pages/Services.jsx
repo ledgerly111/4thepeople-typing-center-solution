@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import Select from '../components/ui/Select';
 import { getServices, MOCK_SERVICES } from '../services/mockData';
 import { Plus, Tag, Edit, Trash2 } from 'lucide-react';
 
@@ -163,17 +164,18 @@ const Services = () => {
 
                 <div className="form-group">
                     <label className="form-label">Category</label>
-                    <select
-                        className="select"
+                    <Select
+                        options={[
+                            { value: 'Immigration', label: 'Immigration' },
+                            { value: 'EID', label: 'Emirates ID' },
+                            { value: 'Health', label: 'Health' },
+                            { value: 'Traffic', label: 'Traffic' },
+                            { value: 'Other', label: 'Other' }
+                        ]}
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    >
-                        <option value="Immigration">Immigration</option>
-                        <option value="EID">Emirates ID</option>
-                        <option value="Health">Health</option>
-                        <option value="Traffic">Traffic</option>
-                        <option value="Other">Other</option>
-                    </select>
+                        onChange={(val) => setFormData({ ...formData, category: val })}
+                        placeholder="Select category"
+                    />
                 </div>
             </Modal>
         </div>

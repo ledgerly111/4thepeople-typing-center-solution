@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import SearchableSelect from '../components/ui/SearchableSelect';
+import Select from '../components/ui/Select';
 import InvoicePreview from '../components/ui/InvoicePreview';
 import { useStore } from '../contexts/StoreContext';
 import { MOCK_CUSTOMERS, MOCK_SERVICES } from '../services/mockData';
@@ -155,16 +156,18 @@ const Invoices = () => {
                                     style={{ paddingLeft: '2.5rem' }}
                                 />
                             </div>
-                            <select
-                                className="select"
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                style={{ minWidth: '120px' }}
-                            >
-                                <option value="All">All Status</option>
-                                <option value="Paid">Paid</option>
-                                <option value="Pending">Pending</option>
-                            </select>
+                            <div style={{ minWidth: '140px' }}>
+                                <Select
+                                    options={[
+                                        { value: 'All', label: 'All Status' },
+                                        { value: 'Paid', label: 'Paid' },
+                                        { value: 'Pending', label: 'Pending' }
+                                    ]}
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    placeholder="All Status"
+                                />
+                            </div>
                         </div>
                     </Card>
 

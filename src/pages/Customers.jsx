@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import Select from '../components/ui/Select';
 import { getCustomers, MOCK_CUSTOMERS } from '../services/mockData';
 import { Search, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
 
@@ -220,14 +221,15 @@ const Customers = () => {
 
                 <div className="form-group">
                     <label className="form-label">Type</label>
-                    <select
-                        className="select"
+                    <Select
+                        options={[
+                            { value: 'Individual', label: 'Individual' },
+                            { value: 'Corporate', label: 'Corporate' }
+                        ]}
                         value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    >
-                        <option value="Individual">Individual</option>
-                        <option value="Corporate">Corporate</option>
-                    </select>
+                        onChange={(val) => setFormData({ ...formData, type: val })}
+                        placeholder="Select type"
+                    />
                 </div>
             </Modal>
         </div>

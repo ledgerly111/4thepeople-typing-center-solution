@@ -323,6 +323,109 @@
 }
 
 /* ========================================
+   CUSTOM SELECT DROPDOWN
+   ======================================== */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-accent);
+}
+
+.custom-select-trigger.open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.15);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-select-trigger .placeholder {
+  color: var(--text-muted);
+}
+
+.custom-select-trigger .selected {
+  color: var(--text-primary);
+}
+
+.custom-select-arrow {
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.custom-select-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 0;
+  overflow: hidden;
+  z-index: 1000;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.custom-select-dropdown.show {
+  max-height: 250px;
+  overflow-y: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.custom-select-option {
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.custom-select-option:hover {
+  background-color: var(--bg-accent);
+  border-left-color: var(--accent);
+  padding-left: calc(0.75rem + 3px);
+}
+
+.custom-select-option.selected {
+  background-color: var(--accent);
+  color: white;
+  border-left-color: white;
+}
+
+.custom-select-option:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+/* ========================================
    TABLES
    ======================================== */
 .table-container {

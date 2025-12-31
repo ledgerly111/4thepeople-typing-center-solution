@@ -7,12 +7,20 @@ import InvoicePreview from '../components/ui/InvoicePreview';
 import SearchableSelect from '../components/ui/SearchableSelect';
 import Select from '../components/ui/Select';
 import { useStore } from '../contexts/StoreContext';
-import { MOCK_CUSTOMERS, MOCK_SERVICES } from '../services/mockData';
 import { Plus, Edit, Trash2, FileText, CheckCircle, Clock, AlertCircle, Search, Filter, Receipt } from 'lucide-react';
 
 const WorkOrders = () => {
     const navigate = useNavigate();
-    const { workOrders, addWorkOrder, updateWorkOrder, updateWorkOrderStatus, deleteWorkOrder, addInvoice } = useStore();
+    const {
+        workOrders,
+        addWorkOrder,
+        updateWorkOrder,
+        updateWorkOrderStatus,
+        deleteWorkOrder,
+        addInvoice,
+        customers,
+        services
+    } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -70,7 +78,7 @@ const WorkOrders = () => {
             customerName: order.customerName,
             customerMobile: order.customerMobile,
             customerEmail: order.customerEmail,
-            services: order.services.map(s => s.id || MOCK_SERVICES.find(ms => ms.name === s.name)?.id || ''),
+            services: order.services.map(s => s.id || services.find(ms => ms.name === s.name)?.id || ''),
             priority: order.priority,
             dueDate: order.dueDate,
             notes: order.notes
@@ -104,12 +112,12 @@ const WorkOrders = () => {
         const selectedServices = formData.services
             .filter(id => id)
             .map(id => {
-                const service = MOCK_SERVICES.find(s => s.id === parseInt(id));
+                const service = (services || []).find(s => s.id === parseInt(id));
                 return service ? {
                     name: service.name,
-                    serviceFee: service.serviceFee,
-                    govtFee: service.govtFee,
-                    price: service.price
+                    serviceFee: service.service_fee || service.serviceFee || 0,
+                    govtFee: service.govt_fee || service.govtFee || 0,
+                    price: service.total || (service.service_fee + service.govt_fee) || service.price || 0
                 } : null;
             })
             .filter(s => s !== null);
@@ -147,7 +155,7 @@ const WorkOrders = () => {
     };
 
     const handleCustomerSelect = (customerId) => {
-        const customer = MOCK_CUSTOMERS.find(c => c.id === parseInt(customerId));
+        const customer = customers.find(c => c.id === parseInt(customerId));
         if (customer) {
             setFormData({
                 ...formData,
@@ -321,14 +329,14 @@ const WorkOrders = () => {
         return dueDate < today;
     };
 
-    const customerOptions = MOCK_CUSTOMERS.map(c => ({
+    const customerOptions = (customers || []).map(c => ({
         id: c.id,
         name: `${c.name} (${c.mobile})`
     }));
 
-    const serviceOptions = MOCK_SERVICES.map(s => ({
+    const serviceOptions = (services || []).map(s => ({
         id: s.id,
-        name: `${s.name} - AED ${s.price}`
+        name: `${s.name} - AED ${s.total || (parseFloat(s.service_fee || 0) + parseFloat(s.govt_fee || 0))}`
     }));
 
     return (
@@ -527,7 +535,7 @@ const WorkOrders = () => {
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <SearchableSelect
                                 options={customerOptions}
-                                value={formData.customerName ? MOCK_CUSTOMERS.find(c => c.name === formData.customerName)?.id.toString() : ''}
+                                value={formData.customerName ? customers.find(c => c.name === formData.customerName)?.id.toString() : ''}
                                 onChange={handleCustomerSelect}
                                 placeholder="Search customer..."
                                 displayKey="name"

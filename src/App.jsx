@@ -8,6 +8,8 @@ import Customers from './pages/Customers';
 import Services from './pages/Services';
 import Invoices from './pages/Invoices';
 import WorkOrders from './pages/WorkOrders';
+import Expenses from './pages/Expenses';
+import Reports from './pages/Reports';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import './App.css';
@@ -24,6 +26,8 @@ function App() {
               <Route path="services" element={<Services />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="work-orders" element={<WorkOrders />} />
+              <Route path="expenses" element={<Expenses />} />
+              <Route path="reports" element={<Reports />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="settings" element={<Settings />} />
             </Route>

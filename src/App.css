@@ -1131,3 +1131,253 @@
     flex-shrink: 0;
   }
 }
+
+/* ========================================
+   THERMAL RECEIPT PRINTING
+   Optimized for 80mm thermal printers
+   ======================================== */
+
+/* Hide everything except the receipt when printing */
+@media print {
+
+  /* Hide all UI elements */
+  .sidebar,
+  .header,
+  .bottom-nav,
+  .no-print,
+  .modal-header,
+  .modal-footer {
+    display: none !important;
+  }
+
+  /* Hide buttons but not the receipt content */
+  button,
+  .btn,
+  .btn-icon,
+  .print-btn {
+    display: none !important;
+  }
+
+  /* Reset body and html */
+  html,
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Main content takes full width */
+  .main-content,
+  .page-content,
+  .app-layout {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    overflow: visible !important;
+  }
+
+  /* Modal should be visible but reset positioning */
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    display: block !important;
+  }
+
+  .modal {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 80mm !important;
+    width: 80mm !important;
+    background: white !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+  }
+
+  /* Ensure thermal receipt is visible */
+  .thermal-receipt {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Force show print content */
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Thermal Receipt Styles */
+.thermal-receipt {
+  width: 72mm;
+  max-width: 72mm;
+  margin: 0 auto;
+  padding: 4mm;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  background: white;
+  color: black;
+}
+
+.thermal-receipt * {
+  color: black !important;
+  background: transparent !important;
+}
+
+.thermal-header {
+  text-align: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #000;
+}
+
+.thermal-logo {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.thermal-company-name {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.thermal-tagline {
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+.thermal-divider {
+  border: none;
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+
+.thermal-info {
+  margin-bottom: 8px;
+}
+
+.thermal-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.thermal-row-label {
+  font-size: 9px;
+}
+
+.thermal-row-value {
+  font-size: 9px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.thermal-items {
+  margin: 8px 0;
+}
+
+.thermal-item {
+  margin-bottom: 4px;
+}
+
+.thermal-item-name {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.thermal-item-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  padding-left: 8px;
+}
+
+.thermal-totals {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #000;
+}
+
+.thermal-total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.thermal-total-label {
+  font-size: 9px;
+}
+
+.thermal-total-value {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.thermal-grand-total {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #000;
+}
+
+.thermal-payment {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #000;
+}
+
+.thermal-footer {
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed #000;
+  font-size: 9px;
+}
+
+.thermal-footer-thanks {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Print button styling */
+.print-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.print-btn:hover {
+  opacity: 0.9;
+}
+
+@media print {
+  .print-btn {
+    display: none !important;
+  }
+}

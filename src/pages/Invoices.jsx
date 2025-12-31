@@ -4,26 +4,29 @@ import Button from '../components/ui/Button';
 import SearchableSelect from '../components/ui/SearchableSelect';
 import Select from '../components/ui/Select';
 import InvoicePreview from '../components/ui/InvoicePreview';
+import ThermalReceipt from '../components/ui/ThermalReceipt';
+import Modal from '../components/ui/Modal';
 import { useStore } from '../contexts/StoreContext';
-import { MOCK_CUSTOMERS, MOCK_SERVICES } from '../services/mockData';
 import { Plus, Printer, Trash2, ArrowLeft, Eye, CheckCircle, Search } from 'lucide-react';
 
 const Invoices = () => {
-    const { invoices, addInvoice, updateInvoiceStatus } = useStore();
+    const { invoices, addInvoice, updateInvoiceStatus, customers, services } = useStore();
     const [view, setView] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState('');
     const [lineItems, setLineItems] = useState([]);
     const [paymentType, setPaymentType] = useState('Cash');
     const [amountReceived, setAmountReceived] = useState('');
     const [previewInvoice, setPreviewInvoice] = useState(null);
+    const [printInvoice, setPrintInvoice] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
 
     // Filter and sort invoices (newest first)
     const filteredInvoices = invoices
         .filter(inv => {
+            const customerName = inv.customer_name || inv.customerName || '';
             const matchesSearch =
-                inv.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 inv.id.toString().includes(searchTerm);
             const matchesStatus = statusFilter === 'All' || inv.status === statusFilter;
             return matchesSearch && matchesStatus;
@@ -36,12 +39,12 @@ const Invoices = () => {
 
     const updateItem = (index, serviceId) => {
         const newItems = [...lineItems];
-        const service = MOCK_SERVICES.find(s => s.id === parseInt(serviceId));
+        const service = (services || []).find(s => s.id === parseInt(serviceId));
         newItems[index] = {
             serviceId: serviceId,
-            serviceFee: service ? service.serviceFee : 0,
-            govtFee: service ? service.govtFee : 0,
-            price: service ? service.price : 0,
+            serviceFee: service ? (service.service_fee || service.serviceFee || 0) : 0,
+            govtFee: service ? (service.govt_fee || service.govtFee || 0) : 0,
+            price: service ? (service.total || (service.service_fee + service.govt_fee) || service.price || 0) : 0,
             name: service ? service.name : ''
         };
         setLineItems(newItems);
@@ -66,7 +69,7 @@ const Invoices = () => {
         return `${year}-${month}-${day}`;
     };
 
-    const handleGenerateInvoice = () => {
+    const handleGenerateInvoice = async () => {
         if (!selectedCustomer) {
             alert('Please select a customer');
             return;
@@ -76,20 +79,23 @@ const Invoices = () => {
             return;
         }
 
-        const customer = MOCK_CUSTOMERS.find(c => c.id === parseInt(selectedCustomer));
-        const receivedAmount = paymentType === 'Cash' ? (Number(amountReceived) || grandTotal) : 0;
+        const customer = (customers || []).find(c => c.id === parseInt(selectedCustomer));
+        const receivedAmount = paymentType === 'Cash' ? (Number(amountReceived) || 0) : 0;
 
-        const newInvoice = addInvoice({
-            customerName: customer ? customer.name : 'Unknown',
-            customerMobile: customer ? customer.mobile : '',
-            customerEmail: customer ? customer.email : '',
-            serviceFee: totalServiceFee,
-            govtFee: totalGovtFee,
+        // If amount received is less than total, mark as Pending (Credit)
+        const isPaid = paymentType === 'Cash' && receivedAmount >= grandTotal;
+
+        const newInvoice = await addInvoice({
+            customer_name: customer ? customer.name : 'Unknown',
+            customer_mobile: customer ? customer.mobile : '',
+            customer_email: customer ? customer.email : '',
+            service_fee: totalServiceFee,
+            govt_fee: totalGovtFee,
             total: grandTotal,
-            amountReceived: receivedAmount,
-            change: paymentType === 'Cash' ? Math.max(0, receivedAmount - grandTotal) : 0,
-            status: paymentType === 'Cash' ? 'Paid' : 'Pending',
-            paymentType: paymentType,
+            amount_received: receivedAmount,
+            change: isPaid ? Math.max(0, receivedAmount - grandTotal) : 0,
+            status: isPaid ? 'Paid' : 'Pending',
+            payment_type: isPaid ? 'Cash' : 'Credit',
             items: lineItems.map(item => ({
                 name: item.name,
                 serviceFee: item.serviceFee,
@@ -99,7 +105,9 @@ const Invoices = () => {
             date: getTodayDate()
         });
 
-        setPreviewInvoice(newInvoice);
+        if (newInvoice) {
+            setPreviewInvoice(newInvoice);
+        }
         setSelectedCustomer('');
         setLineItems([]);
         setPaymentType('Cash');
@@ -115,14 +123,14 @@ const Invoices = () => {
         setPreviewInvoice(fullInvoice);
     };
 
-    const customerOptions = MOCK_CUSTOMERS.map(c => ({
+    const customerOptions = (customers || []).map(c => ({
         id: c.id,
         name: `${c.name} (${c.mobile})`
     }));
 
-    const serviceOptions = MOCK_SERVICES.map(s => ({
+    const serviceOptions = (services || []).map(s => ({
         id: s.id,
-        name: `${s.name} - AED ${s.price} (Service: ${s.serviceFee} + Govt: ${s.govtFee})`
+        name: `${s.name} - AED ${s.total || (parseFloat(s.service_fee || 0) + parseFloat(s.govt_fee || 0))} (Service: ${s.service_fee || s.serviceFee || 0} + Govt: ${s.govt_fee || s.govtFee || 0})`
     }));
 
     // Format date for display
@@ -133,7 +141,7 @@ const Invoices = () => {
     };
 
     return (
-        <div>
+        <>
             {previewInvoice && (
                 <InvoicePreview
                     invoice={previewInvoice}
@@ -210,8 +218,8 @@ const Invoices = () => {
                                             <tr key={inv.id}>
                                                 <td style={{ fontWeight: '600' }}>#{inv.id}</td>
                                                 <td style={{ color: 'var(--text-muted)' }}>{formatDate(inv.date)}</td>
-                                                <td>{inv.customerName}</td>
-                                                <td>{inv.paymentType || 'Cash'}</td>
+                                                <td>{inv.customer_name || inv.customerName}</td>
+                                                <td>{inv.payment_type || inv.paymentType || 'Cash'}</td>
                                                 <td>
                                                     <span className={`badge ${inv.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
                                                         {inv.status}
@@ -237,6 +245,14 @@ const Invoices = () => {
                                                                 <CheckCircle size={16} />
                                                             </button>
                                                         )}
+                                                        <button
+                                                            className="btn-icon"
+                                                            onClick={() => setPrintInvoice(inv)}
+                                                            title="Print Receipt"
+                                                            style={{ color: 'var(--accent)' }}
+                                                        >
+                                                            <Printer size={16} />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -399,15 +415,15 @@ const Invoices = () => {
                                         <span>AED {change.toFixed(2)}</span>
                                     </div>
                                 )}
-                                {amountReceived && Number(amountReceived) < grandTotal && (
+                                {paymentType === 'Cash' && amountReceived && Number(amountReceived) < grandTotal && (
                                     <div style={{
                                         padding: '0.75rem',
-                                        backgroundColor: 'var(--danger)',
+                                        backgroundColor: 'var(--warning)',
                                         color: 'white',
                                         borderRadius: '6px',
                                         fontSize: '0.875rem'
                                     }}>
-                                        ⚠️ Amount received is less than total (AED {(grandTotal - Number(amountReceived)).toFixed(2)} short)
+                                        ⚠️ Amount short by AED {(grandTotal - Number(amountReceived)).toFixed(2)} - will be saved as Credit
                                     </div>
                                 )}
                             </div>
@@ -416,15 +432,29 @@ const Invoices = () => {
                         <Button
                             onClick={handleGenerateInvoice}
                             style={{ width: '100%', marginTop: '1.5rem' }}
-                            disabled={paymentType === 'Cash' && amountReceived && Number(amountReceived) < grandTotal}
                         >
                             <Printer size={16} /> Generate Invoice
                         </Button>
                     </Card>
                 </div>
             )}
-        </div>
+
+            {/* Thermal Print Modal */}
+            <Modal
+                isOpen={!!printInvoice}
+                onClose={() => setPrintInvoice(null)}
+                title="Print Receipt"
+            >
+                {printInvoice && (
+                    <ThermalReceipt
+                        invoice={printInvoice}
+                        onClose={() => setPrintInvoice(null)}
+                    />
+                )}
+            </Modal>
+        </>
     );
 };
 
 export default Invoices;
+

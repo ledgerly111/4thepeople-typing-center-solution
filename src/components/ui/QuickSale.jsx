@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import SearchableSelect from './SearchableSelect';
-import { MOCK_SERVICES } from '../../services/mockData';
+import { useStore } from '../../contexts/StoreContext';
 import { Plus, Trash2, Printer, Check } from 'lucide-react';
-import logo from '../../assets/4tplogo.svg';
 
 const QuickSale = ({ isOpen, onClose, onComplete }) => {
+    const { services } = useStore();
     const [lineItems, setLineItems] = useState([]);
     const [amountReceived, setAmountReceived] = useState('');
     const [showReceipt, setShowReceipt] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
 
-    const serviceOptions = MOCK_SERVICES.map(s => ({
+    const serviceOptions = (services || []).map(s => ({
         id: s.id,
-        name: `${s.name} - AED ${s.price}`
+        name: `${s.name} - AED ${s.total || (s.service_fee + s.govt_fee)}`
     }));
 
     const addItem = () => {
@@ -23,12 +23,12 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
 
     const updateItem = (index, serviceId) => {
         const newItems = [...lineItems];
-        const service = MOCK_SERVICES.find(s => s.id === parseInt(serviceId));
+        const service = (services || []).find(s => s.id === parseInt(serviceId));
         newItems[index] = {
             serviceId: serviceId,
-            serviceFee: service ? service.serviceFee : 0,
-            govtFee: service ? service.govtFee : 0,
-            price: service ? service.price : 0,
+            serviceFee: service ? (service.service_fee || service.serviceFee) : 0,
+            govtFee: service ? (service.govt_fee || service.govtFee) : 0,
+            price: service ? (service.total || (service.service_fee + service.govt_fee)) : 0,
             name: service ? service.name : ''
         };
         setLineItems(newItems);
@@ -50,11 +50,11 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
             return;
         }
 
-        if (amountReceived && Number(amountReceived) < grandTotal) {
-            alert('Amount received is less than total');
-            return;
-        }
+        // Allow partial payments - just calculate what was received
+        const receivedAmount = Number(amountReceived) || grandTotal;
+        const changeAmount = Math.max(0, receivedAmount - grandTotal);
 
+        // Use snake_case for Supabase columns
         const receipt = {
             items: lineItems.map(item => ({
                 name: item.name,
@@ -62,11 +62,11 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                 govtFee: item.govtFee,
                 price: item.price
             })),
-            serviceFee: totalServiceFee,
-            govtFee: totalGovtFee,
+            service_fee: totalServiceFee,
+            govt_fee: totalGovtFee,
             total: grandTotal,
-            amountReceived: Number(amountReceived) || grandTotal,
-            change: change
+            amount_received: receivedAmount,
+            change: changeAmount
         };
 
         setReceiptData({
@@ -97,60 +97,72 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
         return (
             <div className="modal-overlay" onClick={handleClose}>
                 <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '380px' }}>
-                    <div className="receipt-content" id="receipt-print">
-                        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                            <img src={logo} alt="4 The People" style={{ height: '50px', width: 'auto', marginBottom: '0.5rem' }} />
-                            <p style={{ margin: '0.25rem 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                                Typing Center Services
-                            </p>
-                            <p style={{ margin: '0.5rem 0', fontSize: '0.75rem' }}>
-                                {receiptData.date}
-                            </p>
+                    <div className="thermal-receipt" id="receipt-print">
+                        <div className="thermal-header">
+                            <div className="thermal-logo">4TP</div>
+                            <div className="thermal-company-name">4 The People</div>
+                            <div className="thermal-tagline">Typing & Document Services</div>
                         </div>
 
-                        <div style={{ borderTop: '1px dashed var(--border)', borderBottom: '1px dashed var(--border)', padding: '0.75rem 0', margin: '0.5rem 0' }}>
+                        <div className="thermal-info">
+                            <div className="thermal-row">
+                                <span className="thermal-row-label">Receipt #:</span>
+                                <span className="thermal-row-value">{receiptData.id}</span>
+                            </div>
+                            <div className="thermal-row">
+                                <span className="thermal-row-label">Date:</span>
+                                <span className="thermal-row-value">{receiptData.date}</span>
+                            </div>
+                        </div>
+
+                        <hr className="thermal-divider" />
+
+                        <div className="thermal-items">
                             {receiptData.items.map((item, index) => (
-                                <div key={index} style={{ marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600' }}>
-                                        <span>{item.name}</span>
-                                        <span>AED {item.price}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '0.5rem' }}>
-                                        <span>Service: {item.serviceFee} | Govt: {item.govtFee}</span>
+                                <div key={index} className="thermal-item">
+                                    <div className="thermal-item-name">{item.name}</div>
+                                    <div className="thermal-item-details">
+                                        <span>Svc: {item.serviceFee}</span>
+                                        <span>Gov: {item.govtFee}</span>
+                                        <span>= {item.price}</span>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div style={{ padding: '0.5rem 0' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                <span>Service Charges:</span>
-                                <span>AED {receiptData.serviceFee}</span>
+                        <hr className="thermal-divider" />
+
+                        <div className="thermal-totals">
+                            <div className="thermal-total-row">
+                                <span className="thermal-total-label">Service Fee:</span>
+                                <span className="thermal-total-value">AED {receiptData.service_fee}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                <span>Government Fees:</span>
-                                <span>AED {receiptData.govtFee}</span>
+                            <div className="thermal-total-row">
+                                <span className="thermal-total-label">Govt Fee:</span>
+                                <span className="thermal-total-value">AED {receiptData.govt_fee}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', fontSize: '1.1rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
-                                <span>Total:</span>
-                                <span style={{ color: 'var(--accent)' }}>AED {receiptData.total}</span>
+                            <div className="thermal-total-row thermal-grand-total">
+                                <span>TOTAL:</span>
+                                <span>AED {receiptData.total}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.875rem' }}>
-                                <span>Received:</span>
-                                <span>AED {receiptData.amountReceived}</span>
+                        </div>
+
+                        <div className="thermal-payment">
+                            <div className="thermal-total-row">
+                                <span className="thermal-total-label">Received:</span>
+                                <span className="thermal-total-value">AED {receiptData.amount_received}</span>
                             </div>
                             {receiptData.change > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)', fontWeight: '600' }}>
-                                    <span>Change:</span>
-                                    <span>AED {receiptData.change.toFixed(2)}</span>
+                                <div className="thermal-total-row">
+                                    <span className="thermal-total-label">Change:</span>
+                                    <span className="thermal-total-value">AED {receiptData.change.toFixed(2)}</span>
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ textAlign: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)' }}>
-                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                Thank you for your visit!
-                            </p>
+                        <div className="thermal-footer">
+                            <div className="thermal-footer-thanks">Thank You!</div>
+                            <div>For inquiries call: 050-XXXXXXX</div>
                         </div>
                     </div>
 
@@ -175,7 +187,7 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
             footer={
                 <>
                     <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-                    <Button onClick={handleComplete} disabled={amountReceived && Number(amountReceived) < grandTotal}>
+                    <Button onClick={handleComplete}>
                         <Check size={16} /> Complete Sale
                     </Button>
                 </>

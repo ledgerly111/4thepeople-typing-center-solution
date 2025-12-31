@@ -80,9 +80,9 @@ const InvoicePreview = ({ invoice, onClose }) => {
                 {/* Customer Info */}
                 <div className="invoice-customer">
                     <h3>Bill To:</h3>
-                    <p className="customer-name">{invoice.customerName}</p>
-                    {invoice.customerMobile && <p>{invoice.customerMobile}</p>}
-                    {invoice.customerEmail && <p>{invoice.customerEmail}</p>}
+                    <p className="customer-name">{invoice.customer_name || invoice.customerName}</p>
+                    {(invoice.customer_mobile || invoice.customerMobile) && <p>{invoice.customer_mobile || invoice.customerMobile}</p>}
+                    {(invoice.customer_email || invoice.customerEmail) && <p>{invoice.customer_email || invoice.customerEmail}</p>}
                 </div>
 
                 {/* Line Items */}
@@ -111,7 +111,7 @@ const InvoicePreview = ({ invoice, onClose }) => {
                                 <td>Services</td>
                                 <td className="text-right">-</td>
                                 <td className="text-right">-</td>
-                                <td className="text-right">AED {invoice.total.toFixed(2)}</td>
+                                <td className="text-right">AED {(invoice.total || 0).toFixed(2)}</td>
                             </tr>
                         )}
                     </tbody>
@@ -133,18 +133,18 @@ const InvoicePreview = ({ invoice, onClose }) => {
                     )}
                     <div className="totals-row total">
                         <span>Grand Total:</span>
-                        <span>AED {invoice.total.toFixed(2)}</span>
+                        <span>AED {(invoice.total || 0).toFixed(2)}</span>
                     </div>
-                    {invoice.status === 'Paid' && invoice.amountReceived > 0 && (
+                    {invoice.status === 'Paid' && (invoice.amount_received || invoice.amountReceived) > 0 && (
                         <>
                             <div className="totals-row" style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed #ddd' }}>
                                 <span>Amount Received:</span>
-                                <span>AED {invoice.amountReceived.toFixed(2)}</span>
+                                <span>AED {(invoice.amount_received || invoice.amountReceived || 0).toFixed(2)}</span>
                             </div>
-                            {invoice.change > 0 && (
+                            {(invoice.change || 0) > 0 && (
                                 <div className="totals-row" style={{ color: '#2E7D32' }}>
                                     <span>Change Given:</span>
-                                    <span>AED {invoice.change.toFixed(2)}</span>
+                                    <span>AED {(invoice.change || 0).toFixed(2)}</span>
                                 </div>
                             )}
                         </>

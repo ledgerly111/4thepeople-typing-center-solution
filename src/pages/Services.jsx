@@ -3,7 +3,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
-import { getServices, MOCK_SERVICES } from '../services/mockData';
+import { supabase } from '../services/supabase';
 import { Plus, Tag, Edit, Trash2 } from 'lucide-react';
 
 const Services = () => {
@@ -20,11 +20,23 @@ const Services = () => {
     });
 
     useEffect(() => {
-        getServices().then((data) => {
-            setServices(data);
-            setLoading(false);
-        });
+        loadServices();
     }, []);
+
+    const loadServices = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('services')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading services:', error);
+        } else {
+            setServices(data || []);
+        }
+        setLoading(false);
+    };
 
     const openAddModal = () => {
         setEditingService(null);
@@ -36,14 +48,14 @@ const Services = () => {
         setEditingService(service);
         setFormData({
             name: service.name,
-            serviceFee: service.serviceFee?.toString() || '',
-            govtFee: service.govtFee?.toString() || '',
-            category: service.category
+            serviceFee: service.service_fee?.toString() || '',
+            govtFee: service.govt_fee?.toString() || '',
+            category: service.category || 'Immigration'
         });
         setIsModalOpen(true);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!formData.name || !formData.serviceFee || !formData.govtFee) {
             alert('Name, Service Fee, and Government Fee are required');
             return;
@@ -51,31 +63,68 @@ const Services = () => {
 
         const serviceFee = parseFloat(formData.serviceFee);
         const govtFee = parseFloat(formData.govtFee);
-        const totalPrice = serviceFee + govtFee;
 
         if (editingService) {
+            // Update existing service
+            const { error } = await supabase
+                .from('services')
+                .update({
+                    name: formData.name,
+                    service_fee: serviceFee,
+                    govt_fee: govtFee,
+                    category: formData.category
+                })
+                .eq('id', editingService.id);
+
+            if (error) {
+                console.error('Error updating service:', error);
+                alert('Failed to update service');
+                return;
+            }
+
             setServices(services.map(s =>
                 s.id === editingService.id
-                    ? { ...s, ...formData, serviceFee, govtFee, price: totalPrice }
+                    ? { ...s, name: formData.name, service_fee: serviceFee, govt_fee: govtFee, category: formData.category, total: serviceFee + govtFee }
                     : s
             ));
         } else {
-            const newService = {
-                id: Math.max(...services.map(s => s.id)) + 1,
-                name: formData.name,
-                category: formData.category,
-                serviceFee,
-                govtFee,
-                price: totalPrice
-            };
-            setServices([...services, newService]);
+            // Add new service
+            const { data, error } = await supabase
+                .from('services')
+                .insert([{
+                    name: formData.name,
+                    service_fee: serviceFee,
+                    govt_fee: govtFee,
+                    category: formData.category
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error adding service:', error);
+                alert('Failed to add service');
+                return;
+            }
+
+            setServices([data, ...services]);
         }
 
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (confirm('Are you sure you want to delete this service?')) {
+            const { error } = await supabase
+                .from('services')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting service:', error);
+                alert('Failed to delete service');
+                return;
+            }
+
             setServices(services.filter(s => s.id !== id));
         }
     };
@@ -100,6 +149,12 @@ const Services = () => {
                         Loading...
                     </div>
                 </Card>
+            ) : services.length === 0 ? (
+                <Card>
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                        No services yet. Click "Add Service" to create one.
+                    </div>
+                </Card>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                     {services.map((service) => (
@@ -108,7 +163,7 @@ const Services = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Tag size={14} style={{ color: 'var(--text-muted)' }} />
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                        {service.category}
+                                        {service.category || 'General'}
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -132,11 +187,11 @@ const Services = () => {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Service Charge:</span>
-                                    <span>AED {service.serviceFee || 0}</span>
+                                    <span>AED {service.service_fee || 0}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>Government Fee:</span>
-                                    <span>AED {service.govtFee || 0}</span>
+                                    <span>AED {service.govt_fee || 0}</span>
                                 </div>
                             </div>
 
@@ -149,7 +204,7 @@ const Services = () => {
                             }}>
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total:</span>
                                 <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--accent)' }}>
-                                    AED {service.price}
+                                    AED {service.total || (parseFloat(service.service_fee || 0) + parseFloat(service.govt_fee || 0))}
                                 </span>
                             </div>
                         </Card>

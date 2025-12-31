@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings } from 'lucide-react';
+import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarChart3, Receipt } from 'lucide-react';
 
 const BottomNav = () => {
     const navItems = [
         { icon: Home, label: 'Home', path: '/' },
         { icon: FileText, label: 'Invoices', path: '/invoices' },
         { icon: ClipboardList, label: 'Orders', path: '/work-orders' },
+        { icon: Receipt, label: 'Expenses', path: '/expenses' },
+        { icon: BarChart3, label: 'Reports', path: '/reports' },
         { icon: List, label: 'Sales', path: '/transactions' },
         { icon: Briefcase, label: 'Services', path: '/services' },
         { icon: Users, label: 'Customers', path: '/customers' },

@@ -16,7 +16,8 @@ const Dashboard = () => {
         getOverdueWorkOrdersCount,
         invoices,
         quickSales,
-        addQuickSale
+        addQuickSale,
+        customers
     } = useStore();
 
     const todaySales = getTodaysSales();
@@ -296,15 +297,15 @@ const Dashboard = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Invoices Today</span>
-                                <span style={{ fontWeight: '600' }}>{invoices.filter(i => i.date === new Date().toISOString().split('T')[0]).length}</span>
+                                <span style={{ fontWeight: '600' }}>{invoices.filter(i => i.work_order_id && i.date === new Date().toISOString().split('T')[0]).length}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Quick Sales Today</span>
-                                <span style={{ fontWeight: '600' }}>{quickSales.filter(q => q.date === new Date().toISOString().split('T')[0]).length}</span>
+                                <span style={{ fontWeight: '600' }}>{invoices.filter(i => !i.work_order_id && i.date === new Date().toISOString().split('T')[0]).length}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Total Customers</span>
-                                <span style={{ fontWeight: '600' }}>5</span>
+                                <span style={{ fontWeight: '600' }}>{customers.length || 0}</span>
                             </div>
                         </div>
                     </Card>

@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import html2pdf from 'html2pdf.js';
 import Button from './Button';
 import { Printer, Download, X } from 'lucide-react';
+import logo from '../../assets/4tplogo.svg';
 
 const InvoicePreview = ({ invoice, onClose }) => {
     const invoiceRef = useRef(null);
@@ -50,7 +51,7 @@ const InvoicePreview = ({ invoice, onClose }) => {
                 {/* Header */}
                 <div className="invoice-header">
                     <div className="invoice-company">
-                        <h1 className="invoice-company-name">4 The People</h1>
+                        <img src={logo} alt="4 The People" style={{ height: '60px', width: 'auto', marginBottom: '0.5rem' }} />
                         <p className="invoice-company-subtitle">Typing Center Services</p>
                     </div>
                     <div className="invoice-meta">

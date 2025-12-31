@@ -87,3 +87,89 @@ export const getInvoices = () => {
         }, 800);
     });
 };
+
+// Work Orders with status tracking
+export const MOCK_WORK_ORDERS = [
+    {
+        id: 2001,
+        customerName: "Ahmed Al-Mansoori",
+        customerMobile: "050-1234567",
+        customerEmail: "ahmed.m@example.com",
+        services: [
+            { name: "Emirates ID Typing - New", serviceFee: 70, govtFee: 300, price: 370 }
+        ],
+        serviceFee: 70,
+        govtFee: 300,
+        total: 370,
+        status: "Pending",
+        priority: "High",
+        dueDate: "2026-01-05",
+        notes: "Customer will bring documents tomorrow",
+        createdDate: "2025-12-30",
+        completedDate: null
+    },
+    {
+        id: 2002,
+        customerName: "Tech Solutions LLC",
+        customerMobile: "04-8889999",
+        customerEmail: "contact@techsolutions.ae",
+        services: [
+            { name: "Family Visa Opening", serviceFee: 100, govtFee: 150, price: 250 },
+            { name: "Medical Test Application", serviceFee: 50, govtFee: 100, price: 150 }
+        ],
+        serviceFee: 150,
+        govtFee: 250,
+        total: 400,
+        status: "In Progress",
+        priority: "Urgent",
+        dueDate: "2026-01-02",
+        notes: "Rush order - need by end of week",
+        createdDate: "2025-12-28",
+        completedDate: null
+    },
+    {
+        id: 2003,
+        customerName: "Sarah Jones",
+        customerMobile: "055-9876543",
+        customerEmail: "sarah.j@example.com",
+        services: [
+            { name: "Traffic File Opening", serviceFee: 50, govtFee: 150, price: 200 }
+        ],
+        serviceFee: 50,
+        govtFee: 150,
+        total: 200,
+        status: "Waiting Docs",
+        priority: "Medium",
+        dueDate: "2026-01-08",
+        notes: "Waiting for customer to provide driving license copy",
+        createdDate: "2025-12-29",
+        completedDate: null
+    },
+    {
+        id: 2004,
+        customerName: "Mohammed Ali",
+        customerMobile: "052-3334444",
+        customerEmail: "m.ali@example.com",
+        services: [
+            { name: "Sponsorship Transfer", serviceFee: 150, govtFee: 400, price: 550 }
+        ],
+        serviceFee: 150,
+        govtFee: 400,
+        total: 550,
+        status: "Completed",
+        priority: "Low",
+        dueDate: "2025-12-31",
+        notes: "All documents submitted to GDRFA",
+        createdDate: "2025-12-25",
+        completedDate: "2025-12-30"
+    }
+];
+
+export const getWorkOrders = () => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([...MOCK_WORK_ORDERS]);
+        }, 700);
+    });
+};
+

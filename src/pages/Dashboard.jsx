@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import QuickSale from '../components/ui/QuickSale';
 import { useStore } from '../contexts/StoreContext';
-import { Plus, TrendingUp, Users, FileText, Zap, List, DollarSign, Clock, AlertCircle, Eye } from 'lucide-react';
+import { Plus, TrendingUp, Users, FileText, Zap, List, DollarSign, Clock, AlertCircle, Eye, ClipboardList } from 'lucide-react';
 
 const Dashboard = () => {
     const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false);
@@ -12,6 +12,8 @@ const Dashboard = () => {
         getRecentTransactions,
         getPendingAmount,
         getPendingCount,
+        getPendingWorkOrdersCount,
+        getOverdueWorkOrdersCount,
         invoices,
         quickSales,
         addQuickSale
@@ -20,6 +22,8 @@ const Dashboard = () => {
     const todaySales = getTodaysSales();
     const pendingAmount = getPendingAmount();
     const pendingCount = getPendingCount();
+    const pendingWorkOrders = getPendingWorkOrdersCount();
+    const overdueWorkOrders = getOverdueWorkOrdersCount();
     const totalTransactions = invoices.length + quickSales.length;
     const recentTransactions = getRecentTransactions(10);
 
@@ -191,6 +195,43 @@ const Dashboard = () => {
                                 >
                                     <Plus size={20} />
                                     New Invoice
+                                </button>
+                            </Link>
+
+                            <Link to="/work-orders" style={{ textDecoration: 'none' }}>
+                                <button
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: '0.75rem',
+                                        padding: '1rem',
+                                        width: '100%',
+                                        background: overdueWorkOrders > 0 ? 'var(--danger)' : '#8b5cf6',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        fontWeight: '600',
+                                        fontSize: '0.875rem',
+                                        transition: 'transform 0.2s, opacity 0.2s',
+                                        textAlign: 'left',
+                                        marginTop: '0.75rem'
+                                    }}
+                                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateX(4px)'; e.currentTarget.style.opacity = '0.9'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.opacity = '1'; }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <ClipboardList size={20} />
+                                        <div>
+                                            <div>Work Orders</div>
+                                            <div style={{ fontSize: '0.625rem', opacity: 0.9, fontWeight: '400' }}>
+                                                {pendingWorkOrders} pending
+                                                {overdueWorkOrders > 0 && ` · ${overdueWorkOrders} overdue!`}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </button>
                             </Link>
 

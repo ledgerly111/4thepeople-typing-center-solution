@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { MOCK_INVOICES } from '../services/mockData';
+import { MOCK_INVOICES, MOCK_WORK_ORDERS } from '../services/mockData';
 
 const StoreContext = createContext();
 
@@ -31,6 +31,7 @@ export const StoreProvider = ({ children }) => {
 
     const [invoices, setInvoices] = useState(initialInvoices);
     const [quickSales, setQuickSales] = useState([]);
+    const [workOrders, setWorkOrders] = useState(MOCK_WORK_ORDERS);
 
     // Add new invoice
     const addInvoice = (invoice) => {
@@ -65,6 +66,58 @@ export const StoreProvider = ({ children }) => {
         };
         setQuickSales(prevSales => [newSale, ...prevSales]);
         return newSale;
+    };
+
+    // Work Order Management
+    const addWorkOrder = (workOrder) => {
+        const newWorkOrder = {
+            ...workOrder,
+            id: Math.max(...workOrders.map(wo => wo.id), 2000) + 1,
+            createdDate: getTodayDate(),
+            completedDate: null,
+            status: workOrder.status || 'Pending'
+        };
+        setWorkOrders(prevOrders => [newWorkOrder, ...prevOrders]);
+        return newWorkOrder;
+    };
+
+    const updateWorkOrder = (workOrderId, updates) => {
+        setWorkOrders(prevOrders =>
+            prevOrders.map(wo =>
+                wo.id === workOrderId ? { ...wo, ...updates } : wo
+            )
+        );
+    };
+
+    const updateWorkOrderStatus = (workOrderId, status) => {
+        setWorkOrders(prevOrders =>
+            prevOrders.map(wo =>
+                wo.id === workOrderId
+                    ? {
+                        ...wo,
+                        status,
+                        completedDate: status === 'Completed' ? getTodayDate() : wo.completedDate
+                    }
+                    : wo
+            )
+        );
+    };
+
+    const deleteWorkOrder = (workOrderId) => {
+        setWorkOrders(prevOrders => prevOrders.filter(wo => wo.id !== workOrderId));
+    };
+
+    // Get pending work orders count
+    const getPendingWorkOrdersCount = () => {
+        return workOrders.filter(wo => wo.status !== 'Completed').length;
+    };
+
+    // Get overdue work orders count
+    const getOverdueWorkOrdersCount = () => {
+        const today = getTodayDate();
+        return workOrders.filter(wo =>
+            wo.status !== 'Completed' && wo.dueDate && wo.dueDate < today
+        ).length;
     };
 
     // Get all transactions (invoices + quick sales) sorted by date
@@ -161,9 +214,16 @@ export const StoreProvider = ({ children }) => {
         <StoreContext.Provider value={{
             invoices,
             quickSales,
+            workOrders,
             addInvoice,
             updateInvoiceStatus,
             addQuickSale,
+            addWorkOrder,
+            updateWorkOrder,
+            updateWorkOrderStatus,
+            deleteWorkOrder,
+            getPendingWorkOrdersCount,
+            getOverdueWorkOrdersCount,
             getAllTransactions,
             getRecentTransactions,
             getTodaysSales,
@@ -174,3 +234,4 @@ export const StoreProvider = ({ children }) => {
         </StoreContext.Provider>
     );
 };
+

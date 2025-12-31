@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import logo from '../../assets/4tplogo.svg';
 
 const Header = () => {
     const location = useLocation();
@@ -20,7 +21,7 @@ const Header = () => {
     return (
         <header className="header">
             <div className="header-left">
-                <span className="header-logo">4TP</span>
+                <img src={logo} alt="4TP Logo" className="header-logo" style={{ height: '56px', width: 'auto' }} />
                 <span className="header-title">{getPageTitle()}</span>
             </div>
         </header>

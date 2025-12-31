@@ -14,7 +14,8 @@ const Services = () => {
 
     const [formData, setFormData] = useState({
         name: '',
-        price: '',
+        serviceFee: '',
+        govtFee: '',
         category: 'Immigration'
     });
 
@@ -27,7 +28,7 @@ const Services = () => {
 
     const openAddModal = () => {
         setEditingService(null);
-        setFormData({ name: '', price: '', category: 'Immigration' });
+        setFormData({ name: '', serviceFee: '', govtFee: '', category: 'Immigration' });
         setIsModalOpen(true);
     };
 
@@ -35,29 +36,37 @@ const Services = () => {
         setEditingService(service);
         setFormData({
             name: service.name,
-            price: service.price.toString(),
+            serviceFee: service.serviceFee?.toString() || '',
+            govtFee: service.govtFee?.toString() || '',
             category: service.category
         });
         setIsModalOpen(true);
     };
 
     const handleSubmit = () => {
-        if (!formData.name || !formData.price) {
-            alert('Name and Price are required');
+        if (!formData.name || !formData.serviceFee || !formData.govtFee) {
+            alert('Name, Service Fee, and Government Fee are required');
             return;
         }
+
+        const serviceFee = parseFloat(formData.serviceFee);
+        const govtFee = parseFloat(formData.govtFee);
+        const totalPrice = serviceFee + govtFee;
 
         if (editingService) {
             setServices(services.map(s =>
                 s.id === editingService.id
-                    ? { ...s, ...formData, price: parseFloat(formData.price) }
+                    ? { ...s, ...formData, serviceFee, govtFee, price: totalPrice }
                     : s
             ));
         } else {
             const newService = {
                 id: Math.max(...services.map(s => s.id)) + 1,
-                ...formData,
-                price: parseFloat(formData.price)
+                name: formData.name,
+                category: formData.category,
+                serviceFee,
+                govtFee,
+                price: totalPrice
             };
             setServices([...services, newService]);
         }
@@ -70,6 +79,9 @@ const Services = () => {
             setServices(services.filter(s => s.id !== id));
         }
     };
+
+    // Calculate total price for display in modal
+    const totalPrice = (parseFloat(formData.serviceFee) || 0) + (parseFloat(formData.govtFee) || 0);
 
     return (
         <div>
@@ -111,6 +123,23 @@ const Services = () => {
 
                             <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>{service.name}</h3>
 
+                            {/* Fee Breakdown */}
+                            <div style={{
+                                backgroundColor: 'var(--bg-accent)',
+                                padding: '0.75rem',
+                                borderRadius: '6px',
+                                marginBottom: '0.75rem'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Service Charge:</span>
+                                    <span>AED {service.serviceFee || 0}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Government Fee:</span>
+                                    <span>AED {service.govtFee || 0}</span>
+                                </div>
+                            </div>
+
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
@@ -118,7 +147,7 @@ const Services = () => {
                                 paddingTop: '0.75rem',
                                 borderTop: '1px dashed var(--border)'
                             }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Fee:</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total:</span>
                                 <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--accent)' }}>
                                     AED {service.price}
                                 </span>
@@ -152,17 +181,6 @@ const Services = () => {
                 </div>
 
                 <div className="form-group">
-                    <label className="form-label">Price (AED) *</label>
-                    <input
-                        type="number"
-                        className="input"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="0"
-                    />
-                </div>
-
-                <div className="form-group">
                     <label className="form-label">Category</label>
                     <Select
                         options={[
@@ -177,6 +195,51 @@ const Services = () => {
                         placeholder="Select category"
                     />
                 </div>
+
+                <div className="form-group">
+                    <label className="form-label">Service Charge (Your Fee) *</label>
+                    <input
+                        type="number"
+                        className="input"
+                        value={formData.serviceFee}
+                        onChange={(e) => setFormData({ ...formData, serviceFee: e.target.value })}
+                        placeholder="0"
+                    />
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        Your profit/markup for this service
+                    </small>
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Government Fee *</label>
+                    <input
+                        type="number"
+                        className="input"
+                        value={formData.govtFee}
+                        onChange={(e) => setFormData({ ...formData, govtFee: e.target.value })}
+                        placeholder="0"
+                    />
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        Official government charges (pass-through)
+                    </small>
+                </div>
+
+                {/* Total Price Display */}
+                {(formData.serviceFee || formData.govtFee) && (
+                    <div style={{
+                        padding: '1rem',
+                        backgroundColor: 'var(--accent)',
+                        color: 'white',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontWeight: '700'
+                    }}>
+                        <span>Total Price:</span>
+                        <span style={{ fontSize: '1.25rem' }}>AED {totalPrice.toFixed(2)}</span>
+                    </div>
+                )}
             </Modal>
         </div>
     );

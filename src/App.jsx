@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Services from './pages/Services';
 import Invoices from './pages/Invoices';
+import WorkOrders from './pages/WorkOrders';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import './App.css';
@@ -22,6 +23,7 @@ function App() {
               <Route path="customers" element={<Customers />} />
               <Route path="services" element={<Services />} />
               <Route path="invoices" element={<Invoices />} />
+              <Route path="work-orders" element={<WorkOrders />} />
               <Route path="transactions" element={<Transactions />} />
               <Route path="settings" element={<Settings />} />
             </Route>

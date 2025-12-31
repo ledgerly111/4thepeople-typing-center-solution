@@ -4,6 +4,7 @@ import Button from './Button';
 import SearchableSelect from './SearchableSelect';
 import { MOCK_SERVICES } from '../../services/mockData';
 import { Plus, Trash2, Printer, Check } from 'lucide-react';
+import logo from '../../assets/4tplogo.svg';
 
 const QuickSale = ({ isOpen, onClose, onComplete }) => {
     const [lineItems, setLineItems] = useState([]);
@@ -98,7 +99,7 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                 <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '380px' }}>
                     <div className="receipt-content" id="receipt-print">
                         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.25rem' }}>4 The People</h2>
+                            <img src={logo} alt="4 The People" style={{ height: '50px', width: 'auto', marginBottom: '0.5rem' }} />
                             <p style={{ margin: '0.25rem 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                                 Typing Center Services
                             </p>

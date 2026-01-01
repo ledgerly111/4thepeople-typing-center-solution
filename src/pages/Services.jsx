@@ -4,9 +4,11 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { supabase } from '../services/supabase';
+import { useStore } from '../contexts/StoreContext';
 import { Plus, Tag, Edit, Trash2 } from 'lucide-react';
 
 const Services = () => {
+    const { refreshData } = useStore();
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -107,6 +109,7 @@ const Services = () => {
             }
 
             setServices([data, ...services]);
+            refreshData(); // Sync with StoreContext so Quick Sale & Work Orders see it
         }
 
         setIsModalOpen(false);
@@ -126,6 +129,7 @@ const Services = () => {
             }
 
             setServices(services.filter(s => s.id !== id));
+            refreshData(); // Sync with StoreContext
         }
     };
 

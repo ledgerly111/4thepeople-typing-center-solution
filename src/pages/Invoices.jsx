@@ -21,6 +21,18 @@ const Invoices = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
 
+    // Beneficiary fields
+    const [beneficiaryName, setBeneficiaryName] = useState('');
+    const [beneficiaryIdNumber, setBeneficiaryIdNumber] = useState('');
+
+    // Bulk create modal
+    const [showBulkModal, setShowBulkModal] = useState(false);
+    const [bulkCustomer, setBulkCustomer] = useState('');
+    const [bulkService, setBulkService] = useState('');
+    const [bulkBeneficiaries, setBulkBeneficiaries] = useState('');
+    const [bulkCombined, setBulkCombined] = useState(false); // true = one invoice, false = separate invoices
+    const [hideGovtFee, setHideGovtFee] = useState(false); // Option to hide govt fee in invoice preview/print
+
     // Filter and sort invoices (newest first)
     const filteredInvoices = invoices
         .filter(inv => {
@@ -89,6 +101,8 @@ const Invoices = () => {
             customer_name: customer ? customer.name : 'Unknown',
             customer_mobile: customer ? customer.mobile : '',
             customer_email: customer ? customer.email : '',
+            beneficiary_name: beneficiaryName || null,
+            beneficiary_id_number: beneficiaryIdNumber || null,
             service_fee: totalServiceFee,
             govt_fee: totalGovtFee,
             total: grandTotal,
@@ -112,6 +126,8 @@ const Invoices = () => {
         setLineItems([]);
         setPaymentType('Cash');
         setAmountReceived('');
+        setBeneficiaryName('');
+        setBeneficiaryIdNumber('');
         setView('list');
     };
 
@@ -133,6 +149,128 @@ const Invoices = () => {
         name: `${s.name} - AED ${s.total || (parseFloat(s.service_fee || 0) + parseFloat(s.govt_fee || 0))} (Service: ${s.service_fee || s.serviceFee || 0} + Govt: ${s.govt_fee || s.govtFee || 0})`
     }));
 
+    // Get today's date utility
+    const getTodayDateForBulk = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Handle bulk invoice creation
+    const handleBulkCreate = async () => {
+        if (!bulkCustomer) {
+            alert('Please select a customer (paying company)');
+            return;
+        }
+        if (!bulkService) {
+            alert('Please select a service');
+            return;
+        }
+        if (!bulkBeneficiaries.trim()) {
+            alert('Please enter at least one beneficiary (one per line)');
+            return;
+        }
+
+        const customer = (customers || []).find(c => c.id === parseInt(bulkCustomer));
+        const service = (services || []).find(s => s.id === parseInt(bulkService));
+
+        if (!service) {
+            alert('Service not found');
+            return;
+        }
+
+        // Parse beneficiaries (one per line, format: Name | ID/Passport)
+        const beneficiaryLines = bulkBeneficiaries.trim().split('\n').filter(line => line.trim());
+
+        const serviceFee = parseFloat(service.service_fee || service.serviceFee || 0);
+        const govtFee = parseFloat(service.govt_fee || service.govtFee || 0);
+        const serviceTotal = parseFloat(service.total || (serviceFee + govtFee) || 0);
+
+        if (bulkCombined) {
+            // Mode A: Create ONE combined invoice with all beneficiaries as line items
+            const items = beneficiaryLines.map(line => {
+                const parts = line.split('|').map(p => p.trim());
+                const bName = parts[0] || '';
+                const bId = parts[1] || '';
+                return {
+                    name: `${service.name} - ${bName}${bId ? ` (${bId})` : ''}`,
+                    serviceFee: serviceFee,
+                    govtFee: govtFee,
+                    price: serviceTotal,
+                    beneficiaryName: bName,
+                    beneficiaryId: bId
+                };
+            }).filter(item => item.beneficiaryName);
+
+            const totalServiceFee = items.reduce((sum, i) => sum + i.serviceFee, 0);
+            const totalGovtFee = items.reduce((sum, i) => sum + i.govtFee, 0);
+            const grandTotal = items.reduce((sum, i) => sum + i.price, 0);
+
+            await addInvoice({
+                customer_name: customer ? customer.name : 'Unknown',
+                customer_mobile: customer ? customer.mobile : '',
+                customer_email: customer ? customer.email : '',
+                beneficiary_name: `${items.length} beneficiaries`,
+                beneficiary_id_number: null,
+                service_fee: totalServiceFee,
+                govt_fee: totalGovtFee,
+                total: grandTotal,
+                amount_received: 0,
+                change: 0,
+                status: 'Pending',
+                payment_type: 'Credit',
+                items: items,
+                date: getTodayDateForBulk()
+            });
+
+            alert(`Successfully created 1 combined invoice with ${items.length} beneficiaries!`);
+        } else {
+            // Mode B: Create SEPARATE invoices for each beneficiary
+            let createdCount = 0;
+
+            for (const line of beneficiaryLines) {
+                const parts = line.split('|').map(p => p.trim());
+                const bName = parts[0] || '';
+                const bId = parts[1] || '';
+
+                if (!bName) continue;
+
+                await addInvoice({
+                    customer_name: customer ? customer.name : 'Unknown',
+                    customer_mobile: customer ? customer.mobile : '',
+                    customer_email: customer ? customer.email : '',
+                    beneficiary_name: bName,
+                    beneficiary_id_number: bId || null,
+                    service_fee: serviceFee,
+                    govt_fee: govtFee,
+                    total: serviceTotal,
+                    amount_received: 0,
+                    change: 0,
+                    status: 'Pending',
+                    payment_type: 'Credit',
+                    items: [{
+                        name: service.name,
+                        serviceFee: serviceFee,
+                        govtFee: govtFee,
+                        price: serviceTotal
+                    }],
+                    date: getTodayDateForBulk()
+                });
+                createdCount++;
+            }
+
+            alert(`Successfully created ${createdCount} separate invoices!`);
+        }
+
+        setShowBulkModal(false);
+        setBulkCustomer('');
+        setBulkService('');
+        setBulkBeneficiaries('');
+        setBulkCombined(false);
+    };
+
     // Format date for display
     const formatDate = (dateStr) => {
         if (!dateStr) return 'N/A';
@@ -143,19 +281,52 @@ const Invoices = () => {
     return (
         <>
             {previewInvoice && (
-                <InvoicePreview
-                    invoice={previewInvoice}
-                    onClose={() => setPreviewInvoice(null)}
-                />
+                <>
+                    {/* Hide Govt Fee Toggle - positioned in corner */}
+                    <div className="no-print" style={{
+                        position: 'fixed',
+                        top: '1rem',
+                        right: '1rem',
+                        zIndex: 3005,
+                        background: 'var(--bg-card)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <input
+                            type="checkbox"
+                            id="hideGovtFee"
+                            checked={hideGovtFee}
+                            onChange={(e) => setHideGovtFee(e.target.checked)}
+                            style={{ width: '16px', height: '16px' }}
+                        />
+                        <label htmlFor="hideGovtFee" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
+                            Hide Govt Fees
+                        </label>
+                    </div>
+                    <InvoicePreview
+                        invoice={previewInvoice}
+                        onClose={() => setPreviewInvoice(null)}
+                        hideGovtFee={hideGovtFee}
+                    />
+                </>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {view === 'list' ? (
                     <>
                         <h2 style={{ margin: 0 }}>Invoices</h2>
-                        <Button onClick={() => setView('create')}>
-                            <Plus size={16} /> New Invoice
-                        </Button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <Button variant="secondary" onClick={() => setShowBulkModal(true)}>
+                                <Plus size={16} /> Bulk Create
+                            </Button>
+                            <Button onClick={() => setView('create')}>
+                                <Plus size={16} /> New Invoice
+                            </Button>
+                        </div>
                     </>
                 ) : (
                     <>
@@ -218,7 +389,14 @@ const Invoices = () => {
                                             <tr key={inv.id}>
                                                 <td style={{ fontWeight: '600' }}>#{inv.id}</td>
                                                 <td style={{ color: 'var(--text-muted)' }}>{formatDate(inv.date)}</td>
-                                                <td>{inv.customer_name || inv.customerName}</td>
+                                                <td>
+                                                    <div>{inv.customer_name || inv.customerName}</div>
+                                                    {(inv.beneficiary_name || inv.beneficiaryName) && (
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            👤 {inv.beneficiary_name || inv.beneficiaryName}
+                                                        </div>
+                                                    )}
+                                                </td>
                                                 <td>{inv.payment_type || inv.paymentType || 'Cash'}</td>
                                                 <td>
                                                     <span className={`badge ${inv.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
@@ -282,7 +460,36 @@ const Invoices = () => {
                         />
                     </Card>
 
-                    <Card title="Services">
+                    {/* Beneficiary Section */}
+                    <Card title="👤 Beneficiary (Optional)" style={{ marginTop: '1rem' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                            Person receiving the service (leave blank if same as customer)
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Beneficiary Name</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={beneficiaryName}
+                                    onChange={(e) => setBeneficiaryName(e.target.value)}
+                                    placeholder="e.g., Ahmed Hassan"
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">ID/Passport</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={beneficiaryIdNumber}
+                                    onChange={(e) => setBeneficiaryIdNumber(e.target.value)}
+                                    placeholder="e.g., A12345678"
+                                />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card title="Services" style={{ marginTop: '1rem' }}>
                         {lineItems.map((item, index) => (
                             <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', alignItems: 'center' }}>
                                 <div style={{ flex: 1 }}>
@@ -451,6 +658,96 @@ const Invoices = () => {
                         onClose={() => setPrintInvoice(null)}
                     />
                 )}
+            </Modal>
+
+            {/* Bulk Create Modal */}
+            <Modal
+                isOpen={showBulkModal}
+                onClose={() => {
+                    setShowBulkModal(false);
+                    setBulkCustomer('');
+                    setBulkService('');
+                    setBulkBeneficiaries('');
+                    setBulkCombined(false);
+                }}
+                title="📋 Bulk Create Invoices"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setShowBulkModal(false)}>Cancel</Button>
+                        <Button onClick={handleBulkCreate}>Create Invoices</Button>
+                    </>
+                }
+            >
+                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px', fontSize: '0.875rem' }}>
+                    <strong>💡 Tip:</strong> Enter one beneficiary per line. Format: <code>Name | ID/Passport</code>
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Customer (Paying Company) *</label>
+                    <SearchableSelect
+                        options={customerOptions}
+                        value={bulkCustomer}
+                        onChange={setBulkCustomer}
+                        placeholder="Search customer..."
+                        displayKey="name"
+                        valueKey="id"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Service (Same for all) *</label>
+                    <SearchableSelect
+                        options={serviceOptions}
+                        value={bulkService}
+                        onChange={setBulkService}
+                        placeholder="Search service..."
+                        displayKey="name"
+                        valueKey="id"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Beneficiaries (One per line) *</label>
+                    <textarea
+                        className="input"
+                        value={bulkBeneficiaries}
+                        onChange={(e) => setBulkBeneficiaries(e.target.value)}
+                        placeholder="Ahmed Hassan | A12345678
+Mohammed Ali | B87654321
+Fatima Khan"
+                        rows={8}
+                        style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
+                    />
+                    <small style={{ color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                        {bulkBeneficiaries.split('\n').filter(l => l.trim()).length} beneficiaries will be created
+                    </small>
+                </div>
+
+                {/* Toggle: Combined vs Separate */}
+                <div style={{
+                    padding: '1rem',
+                    background: 'var(--bg-accent)',
+                    borderRadius: '8px',
+                    marginTop: '0.5rem'
+                }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                        <input
+                            type="checkbox"
+                            checked={bulkCombined}
+                            onChange={(e) => setBulkCombined(e.target.checked)}
+                            style={{ width: '18px', height: '18px', accentColor: 'var(--accent)' }}
+                        />
+                        <div>
+                            <strong>Create ONE combined invoice</strong>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {bulkCombined
+                                    ? '✓ All beneficiaries will be line items on a single invoice'
+                                    : 'Each beneficiary gets a separate invoice'
+                                }
+                            </div>
+                        </div>
+                    </label>
+                </div>
             </Modal>
         </>
     );

@@ -13,34 +13,64 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [organization, setOrganization] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Fetch user profile and organization
+    const fetchProfile = async (userId) => {
+        try {
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*, organizations(*)')
+                .eq('id', userId)
+                .single();
+
+            if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                return null;
+            }
+
+            setProfile(profileData);
+            setOrganization(profileData?.organizations || null);
+            return profileData;
+        } catch (error) {
+            console.error('Error in fetchProfile:', error);
+            return null;
+        }
+    };
 
     useEffect(() => {
         // Check active session
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                await fetchProfile(currentUser.id);
+            }
+
             setLoading(false);
         };
 
         checkSession();
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                await fetchProfile(currentUser.id);
+            } else {
+                setProfile(null);
+                setOrganization(null);
+            }
         });
 
         return () => subscription.unsubscribe();
     }, []);
-
-    // Sign up with email and password
-    const signUp = async (email, password) => {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password
-        });
-        return { data, error };
-    };
 
     // Sign in with email and password
     const signIn = async (email, password) => {
@@ -56,18 +86,30 @@ export const AuthProvider = ({ children }) => {
         const { error } = await supabase.auth.signOut();
         if (!error) {
             setUser(null);
+            setProfile(null);
+            setOrganization(null);
         }
         return { error };
     };
 
+    // Helper functions for role checks
+    const isSuperAdmin = () => profile?.role === 'super_admin';
+    const isOrgAdmin = () => profile?.role === 'org_admin';
+    const isStaff = () => profile?.role === 'staff';
+
     return (
         <AuthContext.Provider value={{
             user,
+            profile,
+            organization,
             loading,
-            signUp,
             signIn,
             signOut,
-            isAuthenticated: !!user
+            isAuthenticated: !!user,
+            isSuperAdmin,
+            isOrgAdmin,
+            isStaff,
+            refreshProfile: () => user && fetchProfile(user.id)
         }}>
             {children}
         </AuthContext.Provider>

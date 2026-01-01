@@ -11,6 +11,11 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
     const [amountReceived, setAmountReceived] = useState('');
     const [showReceipt, setShowReceipt] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
+    const [hideGovtFee, setHideGovtFee] = useState(false);
+
+    // Beneficiary info (person receiving the service)
+    const [beneficiaryName, setBeneficiaryName] = useState('');
+    const [beneficiaryId, setBeneficiaryId] = useState('');
 
     const serviceOptions = (services || []).map(s => ({
         id: s.id,
@@ -66,7 +71,9 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
             govt_fee: totalGovtFee,
             total: grandTotal,
             amount_received: receivedAmount,
-            change: changeAmount
+            change: changeAmount,
+            beneficiary_name: beneficiaryName || null,
+            beneficiary_id_number: beneficiaryId || null
         };
 
         setReceiptData({
@@ -88,6 +95,9 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
     const handleClose = () => {
         setLineItems([]);
         setAmountReceived('');
+        setBeneficiaryName('');
+        setBeneficiaryId('');
+        setHideGovtFee(false);
         setShowReceipt(false);
         setReceiptData(null);
         onClose();
@@ -113,6 +123,20 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                                 <span className="thermal-row-label">Date:</span>
                                 <span className="thermal-row-value">{receiptData.date}</span>
                             </div>
+                            {receiptData.beneficiary_name && (
+                                <>
+                                    <div className="thermal-row">
+                                        <span className="thermal-row-label">Beneficiary:</span>
+                                        <span className="thermal-row-value">{receiptData.beneficiary_name}</span>
+                                    </div>
+                                    {receiptData.beneficiary_id_number && (
+                                        <div className="thermal-row">
+                                            <span className="thermal-row-label">ID/Passport:</span>
+                                            <span className="thermal-row-value">{receiptData.beneficiary_id_number}</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         <hr className="thermal-divider" />
@@ -133,14 +157,18 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                         <hr className="thermal-divider" />
 
                         <div className="thermal-totals">
-                            <div className="thermal-total-row">
-                                <span className="thermal-total-label">Service Fee:</span>
-                                <span className="thermal-total-value">AED {receiptData.service_fee}</span>
-                            </div>
-                            <div className="thermal-total-row">
-                                <span className="thermal-total-label">Govt Fee:</span>
-                                <span className="thermal-total-value">AED {receiptData.govt_fee}</span>
-                            </div>
+                            {!hideGovtFee && (
+                                <>
+                                    <div className="thermal-total-row">
+                                        <span className="thermal-total-label">Service Fee:</span>
+                                        <span className="thermal-total-value">AED {receiptData.service_fee}</span>
+                                    </div>
+                                    <div className="thermal-total-row">
+                                        <span className="thermal-total-label">Govt Fee:</span>
+                                        <span className="thermal-total-value">AED {receiptData.govt_fee}</span>
+                                    </div>
+                                </>
+                            )}
                             <div className="thermal-total-row thermal-grand-total">
                                 <span>TOTAL:</span>
                                 <span>AED {receiptData.total}</span>
@@ -166,13 +194,24 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                         </div>
                     </div>
 
-                    <div className="modal-footer no-print">
-                        <Button variant="secondary" onClick={handlePrintReceipt}>
-                            <Printer size={16} /> Print
-                        </Button>
-                        <Button onClick={handleClose}>
-                            <Check size={16} /> Done
-                        </Button>
+                    <div className="modal-footer no-print" style={{ flexDirection: 'column', gap: '0.75rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                            <input
+                                type="checkbox"
+                                checked={hideGovtFee}
+                                onChange={(e) => setHideGovtFee(e.target.checked)}
+                                style={{ width: '16px', height: '16px' }}
+                            />
+                            Hide Government Fees
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                            <Button variant="secondary" onClick={handlePrintReceipt} style={{ flex: 1 }}>
+                                <Printer size={16} /> Print
+                            </Button>
+                            <Button onClick={handleClose} style={{ flex: 1 }}>
+                                <Check size={16} /> Done
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -193,6 +232,35 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
                 </>
             }
         >
+            {/* Beneficiary Section */}
+            <div style={{
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: 'var(--bg-accent)',
+                borderRadius: '8px',
+                border: '1px dashed var(--border)'
+            }}>
+                <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                    👤 Beneficiary (Person receiving service)
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="Name (e.g., Ahmed Hassan)"
+                        value={beneficiaryName}
+                        onChange={(e) => setBeneficiaryName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="ID/Passport (optional)"
+                        value={beneficiaryId}
+                        onChange={(e) => setBeneficiaryId(e.target.value)}
+                    />
+                </div>
+            </div>
+
             <div className="form-group">
                 <label className="form-label">Services</label>
                 {lineItems.map((item, index) => (

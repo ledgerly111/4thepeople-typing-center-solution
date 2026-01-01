@@ -34,11 +34,14 @@ const WorkOrders = () => {
     const [generatedInvoice, setGeneratedInvoice] = useState(null);
     const [amountReceived, setAmountReceived] = useState('');
     const [paymentType, setPaymentType] = useState('Cash');
+    const [hideGovtFee, setHideGovtFee] = useState(false);
 
     const [formData, setFormData] = useState({
         customerName: '',
         customerMobile: '',
         customerEmail: '',
+        beneficiaryName: '',
+        beneficiaryIdNumber: '',
         services: [],
         priority: 'Medium',
         dueDate: '',
@@ -48,14 +51,15 @@ const WorkOrders = () => {
     // Filter work orders
     const filteredOrders = workOrders
         .filter(wo => {
+            const customerName = wo.customer_name || wo.customerName || '';
             const matchesSearch =
-                wo.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 wo.id.toString().includes(searchTerm);
             const matchesStatus = statusFilter === 'All' || wo.status === statusFilter;
             const matchesPriority = priorityFilter === 'All' || wo.priority === priorityFilter;
             return matchesSearch && matchesStatus && matchesPriority;
         })
-        .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        .sort((a, b) => new Date(b.created_date || b.createdDate || b.created_at) - new Date(a.created_date || a.createdDate || a.created_at));
 
     const openAddModal = () => {
         setEditingOrder(null);
@@ -64,6 +68,8 @@ const WorkOrders = () => {
             customerName: '',
             customerMobile: '',
             customerEmail: '',
+            beneficiaryName: '',
+            beneficiaryIdNumber: '',
             services: [],
             priority: 'Medium',
             dueDate: '',
@@ -75,13 +81,15 @@ const WorkOrders = () => {
     const openEditModal = (order) => {
         setEditingOrder(order);
         setFormData({
-            customerName: order.customerName,
-            customerMobile: order.customerMobile,
-            customerEmail: order.customerEmail,
-            services: order.services.map(s => s.id || services.find(ms => ms.name === s.name)?.id || ''),
-            priority: order.priority,
-            dueDate: order.dueDate,
-            notes: order.notes
+            customerName: order.customer_name || order.customerName || '',
+            customerMobile: order.customer_mobile || order.customerMobile || '',
+            customerEmail: order.customer_email || order.customerEmail || '',
+            beneficiaryName: order.beneficiary_name || order.beneficiaryName || '',
+            beneficiaryIdNumber: order.beneficiary_id_number || order.beneficiaryIdNumber || '',
+            services: (order.services || []).map(s => s.id || services.find(ms => ms.name === s.name)?.id || ''),
+            priority: order.priority || 'Medium',
+            dueDate: order.due_date || order.dueDate || '',
+            notes: order.notes || ''
         });
         setIsModalOpen(true);
     };
@@ -127,15 +135,17 @@ const WorkOrders = () => {
         const total = totalServiceFee + totalGovtFee;
 
         const workOrderData = {
-            customerName: formData.customerName,
-            customerMobile: formData.customerMobile,
-            customerEmail: formData.customerEmail,
+            customer_name: formData.customerName,
+            customer_mobile: formData.customerMobile,
+            customer_email: formData.customerEmail,
+            beneficiary_name: formData.beneficiaryName || null,
+            beneficiary_id_number: formData.beneficiaryIdNumber || null,
             services: selectedServices,
-            serviceFee: totalServiceFee,
-            govtFee: totalGovtFee,
+            service_fee: totalServiceFee,
+            govt_fee: totalGovtFee,
             total,
             priority: formData.priority,
-            dueDate: formData.dueDate,
+            due_date: formData.dueDate || null,
             notes: formData.notes
         };
 
@@ -198,25 +208,58 @@ const WorkOrders = () => {
         if (!selectedOrderForInvoice) return;
 
         const order = selectedOrderForInvoice;
+        const orderTotal = parseFloat(order.total) || 0;
 
-        // Create PENDING invoice (Credit)
+        // Get values with fallbacks for snake_case/camelCase
+        const customerName = order.customer_name || order.customerName || 'Walk-in Customer';
+        const customerMobile = order.customer_mobile || order.customerMobile || '';
+        const customerEmail = order.customer_email || order.customerEmail || '';
+        const serviceFee = parseFloat(order.service_fee || order.serviceFee) || 0;
+        const govtFee = parseFloat(order.govt_fee || order.govtFee) || 0;
+        const beneficiaryName = order.beneficiary_name || order.beneficiaryName || '';
+        const beneficiaryId = order.beneficiary_id_number || order.beneficiaryIdNumber || '';
+
+        // Build items array from services if available
+        let items = [];
+        if (order.services && Array.isArray(order.services)) {
+            items = order.services.map(s => ({
+                name: s.name || s.serviceName || 'Service',
+                serviceFee: parseFloat(s.service_fee || s.serviceFee) || 0,
+                govtFee: parseFloat(s.govt_fee || s.govtFee) || 0,
+                price: parseFloat(s.total || s.price) || parseFloat(s.service_fee || s.serviceFee || 0) + parseFloat(s.govt_fee || s.govtFee || 0)
+            }));
+        } else {
+            items = [{
+                name: 'Services',
+                serviceFee: serviceFee,
+                govtFee: govtFee,
+                price: orderTotal
+            }];
+        }
+
+        // Create PENDING invoice (Credit) with snake_case for database
         const newInvoice = addInvoice({
-            customerName: order.customerName,
-            customerMobile: order.customerMobile,
-            customerEmail: order.customerEmail,
-            items: order.services,
-            serviceFee: order.serviceFee,
-            govtFee: order.govtFee,
-            total: order.total,
+            customer_name: customerName,
+            customer_mobile: customerMobile,
+            customer_email: customerEmail,
+            beneficiary_name: beneficiaryName,
+            beneficiary_id_number: beneficiaryId,
+            items: items,
+            service_fee: serviceFee,
+            govt_fee: govtFee,
+            total: orderTotal,
             status: 'Pending',
-            paymentType: 'Credit',
-            amountReceived: 0,
+            payment_type: 'Credit',
+            amount_received: 0,
             change: 0,
-            workOrderId: order.id
+            work_order_id: order.id
         });
 
         // Link invoice to work order
-        updateWorkOrder(order.id, { invoiceId: newInvoice.id });
+        updateWorkOrder(order.id, {
+            invoice_id: newInvoice.id,
+            invoiceId: newInvoice.id
+        });
 
         // Show preview
         setGeneratedInvoice(newInvoice);
@@ -230,31 +273,65 @@ const WorkOrders = () => {
 
         const order = selectedOrderForInvoice;
         const received = parseFloat(amountReceived) || 0;
-        const change = Math.max(0, received - order.total);
+        const orderTotal = parseFloat(order.total) || 0;
+        const change = Math.max(0, received - orderTotal);
 
-        if (received < order.total) {
-            alert(`Amount received (AED ${received}) is less than total (AED ${order.total})`);
+        if (received < orderTotal) {
+            alert(`Amount received (AED ${received}) is less than total (AED ${orderTotal})`);
             return;
         }
 
-        // Create PAID invoice (Cash)
+        // Get values with fallbacks for snake_case/camelCase
+        const customerName = order.customer_name || order.customerName || 'Walk-in Customer';
+        const customerMobile = order.customer_mobile || order.customerMobile || '';
+        const customerEmail = order.customer_email || order.customerEmail || '';
+        const serviceFee = parseFloat(order.service_fee || order.serviceFee) || 0;
+        const govtFee = parseFloat(order.govt_fee || order.govtFee) || 0;
+        const beneficiaryName = order.beneficiary_name || order.beneficiaryName || '';
+        const beneficiaryId = order.beneficiary_id_number || order.beneficiaryIdNumber || '';
+
+        // Build items array from services if available
+        let items = [];
+        if (order.services && Array.isArray(order.services)) {
+            items = order.services.map(s => ({
+                name: s.name || s.serviceName || 'Service',
+                serviceFee: parseFloat(s.service_fee || s.serviceFee) || 0,
+                govtFee: parseFloat(s.govt_fee || s.govtFee) || 0,
+                price: parseFloat(s.total || s.price) || parseFloat(s.service_fee || s.serviceFee || 0) + parseFloat(s.govt_fee || s.govtFee || 0)
+            }));
+        } else {
+            // Fallback: create single item from order totals
+            items = [{
+                name: 'Services',
+                serviceFee: serviceFee,
+                govtFee: govtFee,
+                price: orderTotal
+            }];
+        }
+
+        // Create PAID invoice (Cash) with snake_case for database
         const newInvoice = addInvoice({
-            customerName: order.customerName,
-            customerMobile: order.customerMobile,
-            customerEmail: order.customerEmail,
-            items: order.services,
-            serviceFee: order.serviceFee,
-            govtFee: order.govtFee,
-            total: order.total,
+            customer_name: customerName,
+            customer_mobile: customerMobile,
+            customer_email: customerEmail,
+            beneficiary_name: beneficiaryName,
+            beneficiary_id_number: beneficiaryId,
+            items: items,
+            service_fee: serviceFee,
+            govt_fee: govtFee,
+            total: orderTotal,
             status: 'Paid',
-            paymentType: paymentType,
-            amountReceived: received,
+            payment_type: paymentType,
+            amount_received: received,
             change: change,
-            workOrderId: order.id
+            work_order_id: order.id
         });
 
         // Link invoice to work order
-        updateWorkOrder(order.id, { invoiceId: newInvoice.id });
+        updateWorkOrder(order.id, {
+            invoice_id: newInvoice.id,
+            invoiceId: newInvoice.id
+        });
 
         // Show preview
         setGeneratedInvoice(newInvoice);
@@ -449,9 +526,9 @@ const WorkOrders = () => {
                                                     <button
                                                         className="btn-icon"
                                                         onClick={() => handleReceiptClick(order)}
-                                                        title={order.invoiceId ? `View Invoice #${order.invoiceId}` : 'Generate Invoice'}
+                                                        title={(order.invoice_id || order.invoiceId) ? `View Invoice #${order.invoice_id || order.invoiceId}` : 'Generate Invoice'}
                                                         style={{
-                                                            color: order.invoiceId ? 'var(--success)' : 'var(--accent)'
+                                                            color: (order.invoice_id || order.invoiceId) ? 'var(--success)' : 'var(--accent)'
                                                         }}
                                                     >
                                                         <Receipt size={14} />
@@ -576,6 +653,35 @@ const WorkOrders = () => {
                             </div>
                         </>
                     )}
+                </div>
+
+                {/* Beneficiary Section */}
+                <div style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem',
+                    background: 'var(--bg-accent)',
+                    borderRadius: '8px',
+                    border: '1px dashed var(--border)'
+                }}>
+                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                        👤 Beneficiary (Person receiving service - optional)
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="Name (e.g., Ahmed Hassan)"
+                            value={formData.beneficiaryName}
+                            onChange={(e) => setFormData({ ...formData, beneficiaryName: e.target.value })}
+                        />
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="ID/Passport (optional)"
+                            value={formData.beneficiaryIdNumber}
+                            onChange={(e) => setFormData({ ...formData, beneficiaryIdNumber: e.target.value })}
+                        />
+                    </div>
                 </div>
 
                 <div className="form-group">
@@ -906,14 +1012,43 @@ const WorkOrders = () => {
 
             {/* Invoice Preview Modal */}
             {showInvoicePreview && generatedInvoice && (
-                <InvoicePreview
-                    invoice={generatedInvoice}
-                    onClose={() => {
-                        setShowInvoicePreview(false);
-                        setGeneratedInvoice(null);
-                        setSelectedOrderForInvoice(null);
-                    }}
-                />
+                <>
+                    {/* Hide Govt Fee Toggle */}
+                    <div className="no-print" style={{
+                        position: 'fixed',
+                        top: '1rem',
+                        right: '1rem',
+                        zIndex: 3005,
+                        background: 'var(--bg-card)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <input
+                            type="checkbox"
+                            id="hideGovtFeeWO"
+                            checked={hideGovtFee}
+                            onChange={(e) => setHideGovtFee(e.target.checked)}
+                            style={{ width: '16px', height: '16px' }}
+                        />
+                        <label htmlFor="hideGovtFeeWO" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
+                            Hide Govt Fees
+                        </label>
+                    </div>
+                    <InvoicePreview
+                        invoice={generatedInvoice}
+                        onClose={() => {
+                            setShowInvoicePreview(false);
+                            setGeneratedInvoice(null);
+                            setSelectedOrderForInvoice(null);
+                            setHideGovtFee(false);
+                        }}
+                        hideGovtFee={hideGovtFee}
+                    />
+                </>
             )}
         </div>
     );

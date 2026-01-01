@@ -4,7 +4,7 @@ import Button from './Button';
 import { Printer, Download, X } from 'lucide-react';
 import logo from '../../assets/4tplogo.svg';
 
-const InvoicePreview = ({ invoice, onClose }) => {
+const InvoicePreview = ({ invoice, onClose, hideGovtFee = false }) => {
     const invoiceRef = useRef(null);
 
     const handlePrint = () => {
@@ -91,8 +91,8 @@ const InvoicePreview = ({ invoice, onClose }) => {
                         <tr>
                             <th>#</th>
                             <th>Description</th>
-                            <th className="text-right">Service</th>
-                            <th className="text-right">Govt Fee</th>
+                            {!hideGovtFee && <th className="text-right">Service</th>}
+                            {!hideGovtFee && <th className="text-right">Govt Fee</th>}
                             <th className="text-right">Total</th>
                         </tr>
                     </thead>
@@ -101,16 +101,16 @@ const InvoicePreview = ({ invoice, onClose }) => {
                             <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>{item.name}</td>
-                                <td className="text-right">AED {(item.serviceFee || 0).toFixed(2)}</td>
-                                <td className="text-right">AED {(item.govtFee || 0).toFixed(2)}</td>
+                                {!hideGovtFee && <td className="text-right">AED {(item.serviceFee || 0).toFixed(2)}</td>}
+                                {!hideGovtFee && <td className="text-right">AED {(item.govtFee || 0).toFixed(2)}</td>}
                                 <td className="text-right">AED {(item.price || item.serviceFee + item.govtFee || 0).toFixed(2)}</td>
                             </tr>
                         )) : (
                             <tr>
                                 <td>1</td>
                                 <td>Services</td>
-                                <td className="text-right">-</td>
-                                <td className="text-right">-</td>
+                                {!hideGovtFee && <td className="text-right">-</td>}
+                                {!hideGovtFee && <td className="text-right">-</td>}
                                 <td className="text-right">AED {(invoice.total || 0).toFixed(2)}</td>
                             </tr>
                         )}
@@ -119,7 +119,7 @@ const InvoicePreview = ({ invoice, onClose }) => {
 
                 {/* Totals */}
                 <div className="invoice-totals">
-                    {(totalServiceFee > 0 || totalGovtFee > 0) && (
+                    {!hideGovtFee && (totalServiceFee > 0 || totalGovtFee > 0) && (
                         <>
                             <div className="totals-row muted">
                                 <span>Service Charges:</span>

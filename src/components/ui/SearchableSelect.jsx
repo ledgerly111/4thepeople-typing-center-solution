@@ -15,8 +15,8 @@ const SearchableSelect = ({
     const [searchTerm, setSearchTerm] = useState('');
     const wrapperRef = useRef(null);
 
-    // Find selected option
-    const selectedOption = options.find(opt => opt[valueKey] === value);
+    // Find selected option (convert both to string for comparison)
+    const selectedOption = options.find(opt => String(opt[valueKey]) === String(value));
 
     // Filter options based on search
     const filteredOptions = options.filter(opt =>
@@ -83,7 +83,7 @@ const SearchableSelect = ({
                         filteredOptions.map((option) => (
                             <div
                                 key={option[valueKey]}
-                                className={`searchable-select-option ${option[valueKey] === value ? 'selected' : ''}`}
+                                className={`searchable-select-option ${String(option[valueKey]) === String(value) ? 'selected' : ''}`}
                                 onClick={() => handleSelect(option)}
                             >
                                 {renderOption ? renderOption(option) : option[displayKey]}

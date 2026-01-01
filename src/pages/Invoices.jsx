@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import SearchableSelect from '../components/ui/SearchableSelect';
@@ -10,6 +11,7 @@ import { useStore } from '../contexts/StoreContext';
 import { Plus, Printer, Trash2, ArrowLeft, Eye, CheckCircle, Search } from 'lucide-react';
 
 const Invoices = () => {
+    const navigate = useNavigate();
     const { invoices, addInvoice, updateInvoiceStatus, customers, services } = useStore();
     const [view, setView] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState('');
@@ -119,8 +121,11 @@ const Invoices = () => {
             date: getTodayDate()
         });
 
-        if (newInvoice) {
-            setPreviewInvoice(newInvoice);
+        if (newInvoice && newInvoice.success) {
+            setPreviewInvoice(newInvoice.data);
+        } else {
+            alert(`Failed to create invoice: ${newInvoice?.error || 'Unknown error'}`);
+            return;
         }
         setSelectedCustomer('');
         setLineItems([]);
@@ -208,7 +213,7 @@ const Invoices = () => {
             const totalGovtFee = items.reduce((sum, i) => sum + i.govtFee, 0);
             const grandTotal = items.reduce((sum, i) => sum + i.price, 0);
 
-            await addInvoice({
+            const result = await addInvoice({
                 customer_name: customer ? customer.name : 'Unknown',
                 customer_mobile: customer ? customer.mobile : '',
                 customer_email: customer ? customer.email : '',
@@ -225,7 +230,11 @@ const Invoices = () => {
                 date: getTodayDateForBulk()
             });
 
-            alert(`Successfully created 1 combined invoice with ${items.length} beneficiaries!`);
+            if (result && result.success) {
+                alert(`Successfully created 1 combined invoice with ${items.length} beneficiaries!`);
+            } else {
+                alert(`Failed to create combined invoice: ${result?.error || 'Unknown error'}`);
+            }
         } else {
             // Mode B: Create SEPARATE invoices for each beneficiary
             let createdCount = 0;
@@ -237,7 +246,7 @@ const Invoices = () => {
 
                 if (!bName) continue;
 
-                await addInvoice({
+                const result = await addInvoice({
                     customer_name: customer ? customer.name : 'Unknown',
                     customer_mobile: customer ? customer.mobile : '',
                     customer_email: customer ? customer.email : '',
@@ -258,7 +267,11 @@ const Invoices = () => {
                     }],
                     date: getTodayDateForBulk()
                 });
-                createdCount++;
+
+                if (result && result.success) createdCount++;
+                else {
+                    alert(`Failed to create invoice for ${bName}: ${result?.error || 'Unknown error'}`);
+                }
             }
 
             alert(`Successfully created ${createdCount} separate invoices!`);
@@ -281,38 +294,10 @@ const Invoices = () => {
     return (
         <>
             {previewInvoice && (
-                <>
-                    {/* Hide Govt Fee Toggle - positioned in corner */}
-                    <div className="no-print" style={{
-                        position: 'fixed',
-                        top: '1rem',
-                        right: '1rem',
-                        zIndex: 3005,
-                        background: 'var(--bg-card)',
-                        padding: '0.75rem 1rem',
-                        borderRadius: '8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                    }}>
-                        <input
-                            type="checkbox"
-                            id="hideGovtFee"
-                            checked={hideGovtFee}
-                            onChange={(e) => setHideGovtFee(e.target.checked)}
-                            style={{ width: '16px', height: '16px' }}
-                        />
-                        <label htmlFor="hideGovtFee" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
-                            Hide Govt Fees
-                        </label>
-                    </div>
-                    <InvoicePreview
-                        invoice={previewInvoice}
-                        onClose={() => setPreviewInvoice(null)}
-                        hideGovtFee={hideGovtFee}
-                    />
-                </>
+                <InvoicePreview
+                    invoice={previewInvoice}
+                    onClose={() => setPreviewInvoice(null)}
+                />
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -323,7 +308,7 @@ const Invoices = () => {
                             <Button variant="secondary" onClick={() => setShowBulkModal(true)}>
                                 <Plus size={16} /> Bulk Create
                             </Button>
-                            <Button onClick={() => setView('create')}>
+                            <Button onClick={() => navigate('/invoices/create')}>
                                 <Plus size={16} /> New Invoice
                             </Button>
                         </div>

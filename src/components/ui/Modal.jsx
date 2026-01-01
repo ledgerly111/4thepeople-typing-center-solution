@@ -1,12 +1,18 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children, footer }) => {
+const Modal = ({ isOpen, onClose, title, children, footer, size = 'medium' }) => {
     if (!isOpen) return null;
+
+    const sizeStyles = {
+        small: { maxWidth: '400px' },
+        medium: { maxWidth: '600px' },
+        large: { maxWidth: '900px' }
+    };
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={sizeStyles[size] || sizeStyles.medium}>
                 <div className="modal-header">
                     <h3 className="modal-title">{title}</h3>
                     <button className="modal-close" onClick={onClose}>

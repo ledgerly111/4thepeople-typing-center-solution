@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -19,7 +19,11 @@ const WorkOrders = () => {
         deleteWorkOrder,
         addInvoice,
         customers,
-        services
+        services,
+        govtFeeCards,
+        fetchGovtFeeCards,
+        deductFromCard,
+        invoices
     } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
@@ -34,7 +38,12 @@ const WorkOrders = () => {
     const [generatedInvoice, setGeneratedInvoice] = useState(null);
     const [amountReceived, setAmountReceived] = useState('');
     const [paymentType, setPaymentType] = useState('Cash');
-    const [hideGovtFee, setHideGovtFee] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState('');
+
+    // Fetch cards on mount
+    useEffect(() => {
+        fetchGovtFeeCards();
+    }, []);
 
     const [formData, setFormData] = useState({
         customerName: '',
@@ -45,7 +54,13 @@ const WorkOrders = () => {
         services: [],
         priority: 'Medium',
         dueDate: '',
-        notes: ''
+        notes: '',
+        referenceNumber: '',
+        portalType: '',
+        sponsorName: '',
+        sponsorType: 'Company',
+        sponsorId: '',
+        sponsorContact: ''
     });
 
     // Filter work orders
@@ -59,7 +74,17 @@ const WorkOrders = () => {
             const matchesPriority = priorityFilter === 'All' || wo.priority === priorityFilter;
             return matchesSearch && matchesStatus && matchesPriority;
         })
-        .sort((a, b) => new Date(b.created_date || b.createdDate || b.created_at) - new Date(a.created_date || a.createdDate || a.created_at));
+        .sort((a, b) => {
+            // First: Sort by due date (nearest/earliest first)
+            const dateA = new Date(a.due_date || a.dueDate || '9999-12-31');
+            const dateB = new Date(b.due_date || b.dueDate || '9999-12-31');
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA - dateB;
+            }
+            // Secondary: If same due date, sort by priority (High > Medium > Low)
+            const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+            return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+        });
 
     const openAddModal = () => {
         setEditingOrder(null);
@@ -89,7 +114,13 @@ const WorkOrders = () => {
             services: (order.services || []).map(s => s.id || services.find(ms => ms.name === s.name)?.id || ''),
             priority: order.priority || 'Medium',
             dueDate: order.due_date || order.dueDate || '',
-            notes: order.notes || ''
+            notes: order.notes || '',
+            referenceNumber: order.reference_number || '',
+            portalType: order.portal_type || '',
+            sponsorName: order.sponsor_name || '',
+            sponsorType: order.sponsor_type || 'Company',
+            sponsorId: order.sponsor_id || '',
+            sponsorContact: order.sponsor_contact || ''
         });
         setIsModalOpen(true);
     };
@@ -146,7 +177,13 @@ const WorkOrders = () => {
             total,
             priority: formData.priority,
             due_date: formData.dueDate || null,
-            notes: formData.notes
+            notes: formData.notes,
+            reference_number: formData.referenceNumber || null,
+            portal_type: formData.portalType || null,
+            sponsor_name: formData.sponsorName || null,
+            sponsor_type: formData.sponsorType || null,
+            sponsor_id: formData.sponsorId || null,
+            sponsor_contact: formData.sponsorContact || null
         };
 
         if (editingOrder) {
@@ -183,10 +220,16 @@ const WorkOrders = () => {
         }
 
         // Check if invoice already generated
-        if (order.invoiceId) {
-            // Just show info, can't regenerate
-            setSelectedOrderForInvoice(order);
-            setShowConfirmModal(true);
+        if (order.invoiceId || order.invoice_id) {
+            // Show notification that invoice exists
+            alert(`✅ Invoice Already Generated\n\nInvoice #${order.invoiceId || order.invoice_id}\nStatus: Paid\n\nOpening invoice preview...`);
+
+            // View existing invoice
+            const invoice = invoices.find(inv => inv.id === (order.invoiceId || order.invoice_id));
+            if (invoice) {
+                setGeneratedInvoice(invoice);
+                setShowInvoicePreview(true);
+            }
             return;
         }
 
@@ -204,7 +247,7 @@ const WorkOrders = () => {
     };
 
     // Handle Credit - create pending invoice
-    const handleCreditInvoice = () => {
+    const handleCreditInvoice = async () => {
         if (!selectedOrderForInvoice) return;
 
         const order = selectedOrderForInvoice;
@@ -238,7 +281,7 @@ const WorkOrders = () => {
         }
 
         // Create PENDING invoice (Credit) with snake_case for database
-        const newInvoice = addInvoice({
+        const newInvoice = await addInvoice({
             customer_name: customerName,
             customer_mobile: customerMobile,
             customer_email: customerEmail,
@@ -256,9 +299,9 @@ const WorkOrders = () => {
         });
 
         // Link invoice to work order
+        // Link invoice to work order
         updateWorkOrder(order.id, {
-            invoice_id: newInvoice.id,
-            invoiceId: newInvoice.id
+            invoice_id: newInvoice.id
         });
 
         // Show preview
@@ -268,7 +311,7 @@ const WorkOrders = () => {
     };
 
     // Handle Cash Payment - create paid invoice
-    const handleCashPayment = () => {
+    const handleCashPayment = async () => {
         if (!selectedOrderForInvoice) return;
 
         const order = selectedOrderForInvoice;
@@ -290,6 +333,22 @@ const WorkOrders = () => {
         const beneficiaryName = order.beneficiary_name || order.beneficiaryName || '';
         const beneficiaryId = order.beneficiary_id_number || order.beneficiaryIdNumber || '';
 
+        // Deduct govt fees from selected card if any
+        let cardUsed = null;
+        if (selectedCardId && govtFee > 0) {
+            const deductResult = await deductFromCard(
+                parseInt(selectedCardId),
+                govtFee,
+                order.id,
+                `Govt fee for WO #${order.id} - ${customerName}`
+            );
+            if (!deductResult) {
+                // Deduction failed (insufficient balance) - alert shown by deductFromCard
+                return;
+            }
+            cardUsed = govtFeeCards.find(c => c.id === parseInt(selectedCardId));
+        }
+
         // Build items array from services if available
         let items = [];
         if (order.services && Array.isArray(order.services)) {
@@ -300,7 +359,6 @@ const WorkOrders = () => {
                 price: parseFloat(s.total || s.price) || parseFloat(s.service_fee || s.serviceFee || 0) + parseFloat(s.govt_fee || s.govtFee || 0)
             }));
         } else {
-            // Fallback: create single item from order totals
             items = [{
                 name: 'Services',
                 serviceFee: serviceFee,
@@ -309,8 +367,8 @@ const WorkOrders = () => {
             }];
         }
 
-        // Create PAID invoice (Cash) with snake_case for database
-        const newInvoice = addInvoice({
+        // Create PAID invoice with card info
+        const newInvoice = await addInvoice({
             customer_name: customerName,
             customer_mobile: customerMobile,
             customer_email: customerEmail,
@@ -324,14 +382,19 @@ const WorkOrders = () => {
             payment_type: paymentType,
             amount_received: received,
             change: change,
-            work_order_id: order.id
+            work_order_id: order.id,
+            govt_fee_card_id: selectedCardId ? parseInt(selectedCardId) : null,
+            govt_fee_card_name: cardUsed?.card_name || null
         });
 
         // Link invoice to work order
         updateWorkOrder(order.id, {
             invoice_id: newInvoice.id,
-            invoiceId: newInvoice.id
+            govt_fee_card_id: selectedCardId ? parseInt(selectedCardId) : null
         });
+
+        // Reset card selection
+        setSelectedCardId('');
 
         // Show preview
         setGeneratedInvoice(newInvoice);
@@ -421,7 +484,7 @@ const WorkOrders = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <h2 style={{ margin: 0 }}>Work Orders</h2>
-                <Button onClick={openAddModal}>
+                <Button onClick={() => navigate('/work-orders/create')}>
                     <Plus size={16} /> New Work Order
                 </Button>
             </div>
@@ -481,6 +544,7 @@ const WorkOrders = () => {
                                 <th>Customer</th>
                                 <th>Services</th>
                                 <th>Status</th>
+                                <th>Ref/Portal</th>
                                 <th>Priority</th>
                                 <th>Due Date</th>
                                 <th style={{ textAlign: 'right' }}>Total</th>
@@ -507,6 +571,10 @@ const WorkOrders = () => {
                                             )}
                                         </td>
                                         <td>{getStatusBadge(order.status)}</td>
+                                        <td>
+                                            {order.reference_number && <div style={{ fontWeight: '500' }}>{order.reference_number}</div>}
+                                            {order.portal_type && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.portal_type}</div>}
+                                        </td>
                                         <td>{getPriorityBadge(order.priority)}</td>
                                         <td>
                                             <div>{formatDate(order.dueDate)}</div>
@@ -681,6 +749,39 @@ const WorkOrders = () => {
                             value={formData.beneficiaryIdNumber}
                             onChange={(e) => setFormData({ ...formData, beneficiaryIdNumber: e.target.value })}
                         />
+                    </div>
+                </div>
+
+                {/* Sponsor & Reference Section */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{
+                        padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px', border: '1px dashed var(--border)'
+                    }}>
+                        <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>🏢 Sponsor</label>
+                        <input type="text" className="input" placeholder="Sponsor Name" style={{ marginBottom: '0.5rem' }}
+                            value={formData.sponsorName} onChange={(e) => setFormData({ ...formData, sponsorName: e.target.value })} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <input type="text" className="input" placeholder="ID/License"
+                                value={formData.sponsorId} onChange={(e) => setFormData({ ...formData, sponsorId: e.target.value })} />
+                            <Select options={[{ value: 'Company', label: 'Company' }, { value: 'Individual', label: 'Individual' }, { value: 'Family', label: 'Family' }]}
+                                value={formData.sponsorType} onChange={(val) => setFormData({ ...formData, sponsorType: val })} />
+                        </div>
+                    </div>
+                    <div style={{
+                        padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px', border: '1px dashed var(--border)'
+                    }}>
+                        <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>🔖 Reference & Portal</label>
+                        <input type="text" className="input" placeholder="Application/Ref #" style={{ marginBottom: '0.5rem' }}
+                            value={formData.referenceNumber} onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })} />
+                        <Select options={[
+                            { value: '', label: 'Select Portal' },
+                            { value: 'ICP (eChannels)', label: 'ICP (eChannels)' },
+                            { value: 'MOHRE (Tasheel)', label: 'MOHRE (Tasheel)' },
+                            { value: 'GDRFA (Amer)', label: 'GDRFA (Amer)' },
+                            { value: 'DED', label: 'DED' },
+                            { value: 'Other', label: 'Other' }
+                        ]}
+                            value={formData.portalType} onChange={(val) => setFormData({ ...formData, portalType: val })} />
                     </div>
                 </div>
 
@@ -951,6 +1052,38 @@ const WorkOrders = () => {
                             />
                         </div>
 
+                        {/* Govt Fee Card Selection */}
+                        {(selectedOrderForInvoice?.govt_fee > 0 || selectedOrderForInvoice?.govtFee > 0) && (
+                            <div className="form-group">
+                                <label className="form-label">Deduct Govt Fee From Card</label>
+                                <Select
+                                    options={[
+                                        { value: '', label: 'Select Card (optional)' },
+                                        ...govtFeeCards
+                                            .filter(c => c.status === 'Active')
+                                            .map(c => ({
+                                                value: c.id.toString(),
+                                                label: `${c.card_name} - AED ${parseFloat(c.balance || 0).toFixed(2)}`
+                                            }))
+                                    ]}
+                                    value={selectedCardId}
+                                    onChange={setSelectedCardId}
+                                />
+                                {selectedCardId && (
+                                    <div style={{
+                                        marginTop: '0.5rem',
+                                        padding: '0.5rem',
+                                        background: 'var(--bg-accent)',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        color: 'var(--text-muted)'
+                                    }}>
+                                        💳 Govt fee of AED {parseFloat(selectedOrderForInvoice?.govt_fee || selectedOrderForInvoice?.govtFee || 0).toFixed(2)} will be deducted from this card
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <div className="form-group">
                             <label className="form-label">Amount Received (AED)</label>
                             <input
@@ -1012,43 +1145,14 @@ const WorkOrders = () => {
 
             {/* Invoice Preview Modal */}
             {showInvoicePreview && generatedInvoice && (
-                <>
-                    {/* Hide Govt Fee Toggle */}
-                    <div className="no-print" style={{
-                        position: 'fixed',
-                        top: '1rem',
-                        right: '1rem',
-                        zIndex: 3005,
-                        background: 'var(--bg-card)',
-                        padding: '0.75rem 1rem',
-                        borderRadius: '8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                    }}>
-                        <input
-                            type="checkbox"
-                            id="hideGovtFeeWO"
-                            checked={hideGovtFee}
-                            onChange={(e) => setHideGovtFee(e.target.checked)}
-                            style={{ width: '16px', height: '16px' }}
-                        />
-                        <label htmlFor="hideGovtFeeWO" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
-                            Hide Govt Fees
-                        </label>
-                    </div>
-                    <InvoicePreview
-                        invoice={generatedInvoice}
-                        onClose={() => {
-                            setShowInvoicePreview(false);
-                            setGeneratedInvoice(null);
-                            setSelectedOrderForInvoice(null);
-                            setHideGovtFee(false);
-                        }}
-                        hideGovtFee={hideGovtFee}
-                    />
-                </>
+                <InvoicePreview
+                    invoice={generatedInvoice}
+                    onClose={() => {
+                        setShowInvoicePreview(false);
+                        setGeneratedInvoice(null);
+                        setSelectedOrderForInvoice(null);
+                    }}
+                />
             )}
         </div>
     );

@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import SearchableSelect from './SearchableSelect';
+import Select from './Select';
 import { useStore } from '../../contexts/StoreContext';
-import { Plus, Trash2, Printer, Check } from 'lucide-react';
+import { Plus, Trash2, Printer, Check, CreditCard } from 'lucide-react';
 
 const QuickSale = ({ isOpen, onClose, onComplete }) => {
-    const { services } = useStore();
+    const { services, govtFeeCards, fetchGovtFeeCards, deductFromCard } = useStore();
     const [lineItems, setLineItems] = useState([]);
     const [amountReceived, setAmountReceived] = useState('');
     const [showReceipt, setShowReceipt] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
     const [hideGovtFee, setHideGovtFee] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState('');
 
     // Beneficiary info (person receiving the service)
     const [beneficiaryName, setBeneficiaryName] = useState('');
     const [beneficiaryId, setBeneficiaryId] = useState('');
+
+    // Fetch cards on mount
+    useEffect(() => {
+        fetchGovtFeeCards();
+    }, []);
 
     const serviceOptions = (services || []).map(s => ({
         id: s.id,
@@ -49,7 +56,7 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
     const grandTotal = totalServiceFee + totalGovtFee;
     const change = amountReceived ? Math.max(0, Number(amountReceived) - grandTotal) : 0;
 
-    const handleComplete = () => {
+    const handleComplete = async () => {
         if (lineItems.length === 0 || lineItems.some(item => !item.serviceId)) {
             alert('Please add at least one service');
             return;
@@ -58,6 +65,22 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
         // Allow partial payments - just calculate what was received
         const receivedAmount = Number(amountReceived) || grandTotal;
         const changeAmount = Math.max(0, receivedAmount - grandTotal);
+
+        // Deduct govt fees from selected card if any
+        let cardUsed = null;
+        if (selectedCardId && totalGovtFee > 0) {
+            const deductResult = await deductFromCard(
+                parseInt(selectedCardId),
+                totalGovtFee,
+                null, // No work order for quick sale
+                `Quick Sale govt fee - ${beneficiaryName || 'Walk-in'}`
+            );
+            if (!deductResult) {
+                // Deduction failed - alert shown by deductFromCard
+                return;
+            }
+            cardUsed = govtFeeCards.find(c => c.id === parseInt(selectedCardId));
+        }
 
         // Use snake_case for Supabase columns
         const receipt = {
@@ -73,13 +96,16 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
             amount_received: receivedAmount,
             change: changeAmount,
             beneficiary_name: beneficiaryName || null,
-            beneficiary_id_number: beneficiaryId || null
+            beneficiary_id_number: beneficiaryId || null,
+            govt_fee_card_id: selectedCardId ? parseInt(selectedCardId) : null,
+            govt_fee_card_name: cardUsed?.card_name || null
         };
 
         setReceiptData({
             ...receipt,
             id: `QS-${Date.now()}`,
-            date: new Date().toLocaleString()
+            date: new Date().toLocaleString(),
+            cardUsed: cardUsed?.card_name
         });
         setShowReceipt(true);
 
@@ -98,6 +124,7 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
         setBeneficiaryName('');
         setBeneficiaryId('');
         setHideGovtFee(false);
+        setSelectedCardId('');
         setShowReceipt(false);
         setReceiptData(null);
         onClose();
@@ -317,44 +344,77 @@ const QuickSale = ({ isOpen, onClose, onComplete }) => {
 
             {/* Amount Received */}
             {grandTotal > 0 && (
-                <div className="form-group">
-                    <label className="form-label">💰 Amount Received</label>
-                    <input
-                        type="number"
-                        className="input"
-                        placeholder={`Enter amount (min AED ${grandTotal})`}
-                        value={amountReceived}
-                        onChange={(e) => setAmountReceived(e.target.value)}
-                        style={{ fontSize: '1.1rem', fontWeight: '600' }}
-                    />
-                    {amountReceived && Number(amountReceived) >= grandTotal && (
-                        <div style={{
-                            marginTop: '0.5rem',
-                            padding: '0.75rem',
-                            backgroundColor: 'var(--success)',
-                            color: 'white',
-                            borderRadius: '6px',
-                            fontWeight: '600',
-                            display: 'flex',
-                            justifyContent: 'space-between'
-                        }}>
-                            <span>💵 Change to Return:</span>
-                            <span>AED {change.toFixed(2)}</span>
+                <>
+                    {/* Card Selection */}
+                    {totalGovtFee > 0 && (
+                        <div className="form-group">
+                            <label className="form-label">💳 Deduct Govt Fee From Card</label>
+                            <Select
+                                options={[
+                                    { value: '', label: 'Select Card (optional)' },
+                                    ...govtFeeCards
+                                        .filter(c => c.status === 'Active')
+                                        .map(c => ({
+                                            value: c.id.toString(),
+                                            label: `${c.card_name} - AED ${parseFloat(c.balance || 0).toFixed(2)}`
+                                        }))
+                                ]}
+                                value={selectedCardId}
+                                onChange={setSelectedCardId}
+                            />
+                            {selectedCardId && (
+                                <div style={{
+                                    marginTop: '0.5rem',
+                                    padding: '0.5rem',
+                                    background: 'var(--bg-accent)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--text-muted)'
+                                }}>
+                                    💳 AED {totalGovtFee.toFixed(2)} will be deducted from this card
+                                </div>
+                            )}
                         </div>
                     )}
-                    {amountReceived && Number(amountReceived) < grandTotal && (
-                        <div style={{
-                            marginTop: '0.5rem',
-                            padding: '0.75rem',
-                            backgroundColor: 'var(--danger)',
-                            color: 'white',
-                            borderRadius: '6px',
-                            fontSize: '0.875rem'
-                        }}>
-                            ⚠️ Short by AED {(grandTotal - Number(amountReceived)).toFixed(2)}
-                        </div>
-                    )}
-                </div>
+                    <div className="form-group">
+                        <label className="form-label">💰 Amount Received</label>
+                        <input
+                            type="number"
+                            className="input"
+                            placeholder={`Enter amount (min AED ${grandTotal})`}
+                            value={amountReceived}
+                            onChange={(e) => setAmountReceived(e.target.value)}
+                            style={{ fontSize: '1.1rem', fontWeight: '600' }}
+                        />
+                        {amountReceived && Number(amountReceived) >= grandTotal && (
+                            <div style={{
+                                marginTop: '0.5rem',
+                                padding: '0.75rem',
+                                backgroundColor: 'var(--success)',
+                                color: 'white',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                justifyContent: 'space-between'
+                            }}>
+                                <span>💵 Change to Return:</span>
+                                <span>AED {change.toFixed(2)}</span>
+                            </div>
+                        )}
+                        {amountReceived && Number(amountReceived) < grandTotal && (
+                            <div style={{
+                                marginTop: '0.5rem',
+                                padding: '0.75rem',
+                                backgroundColor: 'var(--danger)',
+                                color: 'white',
+                                borderRadius: '6px',
+                                fontSize: '0.875rem'
+                            }}>
+                                ⚠️ Short by AED {(grandTotal - Number(amountReceived)).toFixed(2)}
+                            </div>
+                        )}
+                    </div>
+                </>
             )}
         </Modal>
     );

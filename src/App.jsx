@@ -15,6 +15,10 @@ import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import SuperAdmin from './pages/SuperAdmin';
+import Wallet from './pages/Wallet';
+import WorkOrderCreate from './pages/WorkOrderCreate';
+import InvoiceCreate from './pages/InvoiceCreate';
+import CustomerDetail from './pages/CustomerDetail';
 import './App.css';
 
 // ===========================================
@@ -37,9 +41,13 @@ function App() {
               <Route path="/" element={<DashboardLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="customers" element={<Customers />} />
+                <Route path="customers/:id" element={<CustomerDetail />} />
                 <Route path="services" element={<Services />} />
                 <Route path="invoices" element={<Invoices />} />
+                <Route path="invoices/create" element={<InvoiceCreate />} />
                 <Route path="work-orders" element={<WorkOrders />} />
+                <Route path="work-orders/create" element={<WorkOrderCreate />} />
+                <Route path="wallet" element={<Wallet />} />
                 <Route path="expenses" element={<Expenses />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="transactions" element={<Transactions />} />

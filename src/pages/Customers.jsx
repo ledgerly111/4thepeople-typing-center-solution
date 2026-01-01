@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { supabase } from '../services/supabase';
-import { Search, Plus, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, Eye, DollarSign, FileText, Clock, CheckCircle } from 'lucide-react';
 
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
@@ -12,13 +13,19 @@ const Customers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
+    const navigate = useNavigate();
 
     // Form state
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
         email: '',
-        type: 'Individual'
+        address: '',
+        company_name: '',
+        trade_license: '',
+        emirates_id: '',
+        nationality: '',
+        notes: ''
     });
 
     useEffect(() => {
@@ -47,7 +54,17 @@ const Customers = () => {
 
     const openAddModal = () => {
         setEditingCustomer(null);
-        setFormData({ name: '', mobile: '', email: '', type: 'Individual' });
+        setFormData({
+            name: '',
+            mobile: '',
+            email: '',
+            address: '',
+            company_name: '',
+            trade_license: '',
+            emirates_id: '',
+            nationality: '',
+            notes: ''
+        });
         setIsModalOpen(true);
     };
 
@@ -56,10 +73,56 @@ const Customers = () => {
         setFormData({
             name: customer.name,
             mobile: customer.mobile,
-            email: customer.email,
-            type: customer.type
+            email: customer.email || '',
+            address: customer.address || '',
+            company_name: customer.company_name || '',
+            trade_license: customer.trade_license || '',
+            emirates_id: customer.emirates_id || '',
+            nationality: customer.nationality || '',
+            notes: customer.notes || ''
         });
         setIsModalOpen(true);
+    };
+
+    const openDetailModal = async (customer) => {
+        setViewingCustomer(customer);
+        setLoadingDetails(true);
+
+        // Fetch all related data
+        const [workOrdersRes, invoicesRes] = await Promise.all([
+            supabase
+                .from('work_orders')
+                .select('*')
+                .or(`customer_id.eq.${customer.id},customer_mobile.eq.${customer.mobile}`)
+                .order('created_at', { ascending: false }),
+            supabase
+                .from('invoices')
+                .select('*')
+                .or(`customer_id.eq.${customer.id},customer_mobile.eq.${customer.mobile}`)
+                .order('created_at', { ascending: false })
+        ]);
+
+        const workOrders = workOrdersRes.data || [];
+        const invoices = invoicesRes.data || [];
+
+        // Calculate financial summary
+        const totalSpent = invoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+        const totalPaid = invoices.filter(inv => inv.status === 'Paid').reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+        const outstandingBalance = totalSpent - totalPaid;
+
+        setCustomerDetails({
+            workOrders,
+            invoices,
+            stats: {
+                totalSpent,
+                totalPaid,
+                outstandingBalance,
+                totalWorkOrders: workOrders.length,
+                totalInvoices: invoices.length,
+                pendingWorkOrders: workOrders.filter(wo => wo.status !== 'Completed').length
+            }
+        });
+        setLoadingDetails(false);
     };
 
     const handleSubmit = async () => {
@@ -68,11 +131,17 @@ const Customers = () => {
             return;
         }
 
-        // Only send fields that exist in the database
+        // Only send non-empty optional fields
         const customerData = {
             name: formData.name,
             mobile: formData.mobile,
-            email: formData.email || null
+            email: formData.email || null,
+            address: formData.address || null,
+            company_name: formData.company_name || null,
+            trade_license: formData.trade_license || null,
+            emirates_id: formData.emirates_id || null,
+            nationality: formData.nationality || null,
+            notes: formData.notes || null
         };
 
         if (editingCustomer) {
@@ -184,6 +253,9 @@ const Customers = () => {
                                         <td>{customer.email || '-'}</td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
+                                                <button className="btn-icon" onClick={() => navigate(`/customers/${customer.id}`)} title="View Details" style={{ color: 'var(--accent)' }}>
+                                                    <Eye size={14} />
+                                                </button>
                                                 <button className="btn-icon" onClick={() => openEditModal(customer)} title="Edit">
                                                     <Edit size={14} />
                                                 </button>
@@ -236,6 +308,74 @@ const Customers = () => {
                         placeholder="customer@email.com"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Address (Optional)</label>
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder="Full address"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                        <label className="form-label">Company Name (Optional)</label>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="Company/Business name"
+                            value={formData.company_name}
+                            onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Trade License (Optional)</label>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="License number"
+                            value={formData.trade_license}
+                            onChange={(e) => setFormData({ ...formData, trade_license: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                        <label className="form-label">Emirates ID (Optional)</label>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="784-XXXX-XXXXXXX-X"
+                            value={formData.emirates_id}
+                            onChange={(e) => setFormData({ ...formData, emirates_id: e.target.value })}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Nationality (Optional)</label>
+                        <input
+                            type="text"
+                            className="input"
+                            placeholder="e.g., Indian, Pakistani"
+                            value={formData.nationality}
+                            onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label className="form-label">Notes (Optional)</label>
+                    <textarea
+                        className="input"
+                        rows={3}
+                        placeholder="Any additional information..."
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     />
                 </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, Users, Briefcase, FileText, ClipboardList, List, Settings, BarChart3, Receipt, Shield, LogOut } from 'lucide-react';
+import { Home, Users, Briefcase, FileText, ClipboardList, List, Settings, BarChart3, Receipt, Shield, LogOut, Wallet } from 'lucide-react';
 
 const Sidebar = () => {
     const { profile, isSuperAdmin, signOut } = useAuth();
@@ -12,6 +12,7 @@ const Sidebar = () => {
         { icon: Briefcase, label: 'Services', path: '/services' },
         { icon: FileText, label: 'Invoices', path: '/invoices' },
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
+        { icon: Wallet, label: 'Wallet', path: '/wallet' },
         { icon: Receipt, label: 'Expenses', path: '/expenses' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
         { icon: List, label: 'Transactions', path: '/transactions' },

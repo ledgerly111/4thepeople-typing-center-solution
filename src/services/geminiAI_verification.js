@@ -162,26 +162,44 @@ export const extractAndValidateData = async (base64Image, documentType, mimeType
         month: 'long',
         day: 'numeric'
     });
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    const prompt = `IMPORTANT: Today's date is ${currentDate}. Use this as your reference point for ALL date validations.
+    const prompt = `IMPORTANT: Today's date is ${currentDate} (${todayStr}).
+
+DATE VALIDATION LOGIC (READ CAREFULLY):
+✅ VALID Examples:
+- Issue date 2025-12-24 when today is 2026-01-03 = VALID (December 2025 is BEFORE January 2026)
+- Issue date 2024-05-10 when today is 2026-01-03 = VALID (2024 is before 2026)
+- Expiry date 2027-12-23 when today is 2026-01-03 = VALID (2027 is AFTER 2026, expiry should be future)
+
+❌ INVALID Examples:
+- Issue date 2026-02-15 when today is 2026-01-03 = INVALID (February 2026 is AFTER January 2026)
+- Issue date 2027-01-01 when today is 2026-01-03 = INVALID (2027 is in the future, can't issue yet)
+- Expiry date 2025-01-01 when today is 2026-01-03 = INVALID (already expired)
+
+HOW TO COMPARE DATES:
+1. Compare YEAR first (2025 < 2026, so 2025 is in the past)
+2. If same year, compare MONTH (12 < 01 means December is earlier than January of NEXT year)
+3. If same month, compare DAY
 
 You are a data extraction and validation expert.
 
 ${prompts[documentType] || prompts.certificate}
 
-Also validate the extracted data:
-- Check if all dates are in valid format
-- CRITICAL: Check if dates make logical sense relative to today (${currentDate})
-- For example, issue dates should not be in the future
-- Expiry dates should be after issue dates
+Validate the extracted data:
+- Check if all dates are in YYYY-MM-DD format
+- For ISSUE dates: Must be in the PAST (before ${todayStr})
+- For EXPIRY dates: Should be in the FUTURE (after ${todayStr})
+- Expiry date must be AFTER issue date
 - Check if ID/passport numbers follow correct patterns
-- Identify any missing required fields
-- Flag any inconsistencies
+- Identify missing required fields
+- Flag inconsistencies
 
 Return JSON:
 {
     "data": { extracted data object },
-    "validationErrors": ["list of errors found"],
+    "validationErrors": ["ONLY list ACTUAL errors - do NOT flag past issue dates as future!"],
     "missingFields": ["fields that should be present but aren't"],
     "confidence": 0.0 to 1.0
 }

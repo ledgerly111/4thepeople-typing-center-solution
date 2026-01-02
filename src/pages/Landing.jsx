@@ -53,8 +53,7 @@ const Landing = () => {
                 <div className="hero-content">
                     <div className="hero-text">
                         <div className="logo-large">
-                            <div className="sidebar-logo">4TP</div>
-                            <span className="logo-subtitle">For The People</span>
+                            <img src="/4tp-logo.png" alt="4TP Logo" className="logo-image" />
                         </div>
                         <h1 className="hero-title">
                             The Ultimate ERP for<br />
@@ -177,8 +176,7 @@ const Landing = () => {
             <footer className="landing-footer">
                 <div className="footer-content">
                     <div className="footer-brand">
-                        <div className="sidebar-logo">4TP</div>
-                        <p>For The People</p>
+                        <img src="/4tp-logo.png" alt="4TP Logo" style={{ width: '80px', height: '80px', marginBottom: '1rem' }} />
                         <p className="footer-tagline">The Ultimate ERP for UAE Typing Centers</p>
                     </div>
                     <div className="footer-links">

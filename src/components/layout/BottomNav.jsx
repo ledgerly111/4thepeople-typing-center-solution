@@ -4,17 +4,11 @@ import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarCha
 
 const BottomNav = () => {
     const navItems = [
-        { icon: Zap, label: 'Create', path: '/quick-create' },
-        { icon: Home, label: 'Home', path: '/' },
-        { icon: FileText, label: 'Invoices', path: '/invoices' },
-        { icon: ClipboardList, label: 'Orders', path: '/work-orders' },
-        { icon: Wallet, label: 'Wallet', path: '/wallet' },
-        { icon: Receipt, label: 'Expenses', path: '/expenses' },
-        { icon: BarChart3, label: 'Reports', path: '/reports' },
-        { icon: List, label: 'Sales', path: '/transactions' },
-        { icon: Briefcase, label: 'Services', path: '/services' },
-        { icon: Users, label: 'Customers', path: '/customers' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
+        { icon: Home, label: 'Home', path: '/dashboard' },
+        { icon: Zap, label: 'Quick', path: 'quick-create' },
+        { icon: FileText, label: 'Invoices', path: 'invoices' },
+        { icon: BarChart3, label: 'Reports', path: 'reports' },
+        { icon: Settings, label: 'Settings', path: 'settings' },
     ];
 
     return (

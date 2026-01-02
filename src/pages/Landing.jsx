@@ -15,25 +15,25 @@ const Landing = () => {
             icon: <Zap size={32} />,
             title: 'Lightning Quick Create',
             description: 'Scan Emirates ID and create invoices in seconds. Auto-extract customer data with AI-powered OCR.',
-            image: '/landing/quick_create_feature_1767383108836.png'
+            image: '/landing/quick_create.png'
         },
         {
             icon: <Shield size={32} />,
             title: 'AI Document Verification',
             description: 'Detect fraud, extract data, and ensure compliance with ICP/GDRFA requirements before submission.',
-            image: '/landing/ai_verification_feature_1767383124490.png'
+            image: '/landing/ai_verify.png'
         },
         {
             icon: <BarChart3 size={32} />,
             title: 'Smart Reports & Analytics',
             description: 'Real-time insights into revenue, profits, expenses, and tax. Make informed business decisions.',
-            image: '/landing/reports_analytics_feature_1767383142238.png'
+            image: '/landing/reports.png'
         },
         {
             icon: <Wallet size={32} />,
             title: 'Wallet & Cash Management',
             description: 'Track expenses, manage cash flow, and monitor government fees all in one place.',
-            image: '/landing/wallet_management_feature_1767383159203.png'
+            image: '/landing/wallet.png'
         }
     ];
 
@@ -87,7 +87,7 @@ const Landing = () => {
                         </div>
                     </div>
                     <div className="hero-image">
-                        <img src="/landing/hero_typing_center_1767383088966.png" alt="Modern Typing Center" />
+                        <img src="/landing/hero.png" alt="Modern Typing Center" />
                         <div className="floating-card card-1">
                             <FileCheck size={20} style={{ color: 'var(--success)' }} />
                             <span>Invoice Created</span>
@@ -97,11 +97,20 @@ const Landing = () => {
                             <span>AI Verification</span>
                         </div>
                     </div>
+                    <div className="floating-card card-1">
+                        <FileCheck size={20} style={{ color: 'var(--success)' }} />
+                        <span>Invoice Created</span>
+                    </div>
+                    <div className="floating-card card-2">
+                        <Shield size={20} style={{ color: 'var(--accent)' }} />
+                        <span>AI Verification</span>
+                    </div>
                 </div>
-            </section>
+        </div>
+            </section >
 
-            {/* Features Section */}
-            <section id="features" className="features">
+    {/* Features Section */ }
+    < section id = "features" className = "features" >
                 <div className="section-header">
                     <h2>Everything You Need to Run Your Typing Center</h2>
                     <p>Powerful features designed specifically for UAE typing centers</p>
@@ -120,60 +129,60 @@ const Landing = () => {
                         </div>
                     ))}
                 </div>
-            </section>
+            </section >
 
-            {/* Benefits Section */}
-            <section className="benefits">
-                <div className="benefits-container">
-                    <div className="benefits-text">
-                        <h2>Why Typing Centers Choose 4TP</h2>
-                        <p className="benefits-subtitle">
-                            Built by typing center owners, for typing center owners.
-                            Every feature solves a real problem you face daily.
-                        </p>
-                        <ul className="benefits-list">
-                            {benefits.map((benefit, index) => (
-                                <li key={index}>
-                                    <CheckCircle size={20} style={{ color: 'var(--success)', flexShrink: 0 }} />
-                                    <span>{benefit}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <button className="cta-button primary" onClick={handleLogin}>
-                            Start Your Free Trial <ArrowRight size={20} />
-                        </button>
-                    </div>
-                    <div className="benefits-visual">
-                        <div className="benefit-card">
-                            <div className="benefit-number">2.5s</div>
-                            <div className="benefit-label">Average Invoice Creation</div>
-                        </div>
-                        <div className="benefit-card">
-                            <div className="benefit-number">Zero</div>
-                            <div className="benefit-label">Manual Data Entry</div>
-                        </div>
-                        <div className="benefit-card">
-                            <div className="benefit-number">AED</div>
-                            <div className="benefit-label">Multi-Currency Support</div>
-                        </div>
-                    </div>
+    {/* Benefits Section */ }
+    < section className = "benefits" >
+        <div className="benefits-container">
+            <div className="benefits-text">
+                <h2>Why Typing Centers Choose 4TP</h2>
+                <p className="benefits-subtitle">
+                    Built by typing center owners, for typing center owners.
+                    Every feature solves a real problem you face daily.
+                </p>
+                <ul className="benefits-list">
+                    {benefits.map((benefit, index) => (
+                        <li key={index}>
+                            <CheckCircle size={20} style={{ color: 'var(--success)', flexShrink: 0 }} />
+                            <span>{benefit}</span>
+                        </li>
+                    ))}
+                </ul>
+                <button className="cta-button primary" onClick={handleLogin}>
+                    Start Your Free Trial <ArrowRight size={20} />
+                </button>
+            </div>
+            <div className="benefits-visual">
+                <div className="benefit-card">
+                    <div className="benefit-number">2.5s</div>
+                    <div className="benefit-label">Average Invoice Creation</div>
                 </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="final-cta">
-                <div className="cta-container">
-                    <h2>Ready to Transform Your Typing Center?</h2>
-                    <p>Join typing centers across the UAE and streamline your operations today</p>
-                    <button className="cta-button primary large" onClick={handleLogin}>
-                        Get Started Now <ArrowRight size={24} />
-                    </button>
-                    <p className="cta-note">No credit card required • UAE-focused features • 24/7 support</p>
+                <div className="benefit-card">
+                    <div className="benefit-number">Zero</div>
+                    <div className="benefit-label">Manual Data Entry</div>
                 </div>
-            </section>
+                <div className="benefit-card">
+                    <div className="benefit-number">AED</div>
+                    <div className="benefit-label">Multi-Currency Support</div>
+                </div>
+            </div>
+        </div>
+            </section >
 
-            {/* Footer */}
-            <footer className="landing-footer">
+    {/* CTA Section */ }
+    < section className = "final-cta" >
+        <div className="cta-container">
+            <h2>Ready to Transform Your Typing Center?</h2>
+            <p>Join typing centers across the UAE and streamline your operations today</p>
+            <button className="cta-button primary large" onClick={handleLogin}>
+                Get Started Now <ArrowRight size={24} />
+            </button>
+            <p className="cta-note">No credit card required • UAE-focused features • 24/7 support</p>
+        </div>
+            </section >
+
+    {/* Footer */ }
+    < footer className = "landing-footer" >
                 <div className="footer-content">
                     <div className="footer-brand">
                         <img src="/4tp-logo.png" alt="4TP Logo" style={{ width: '80px', height: '80px', marginBottom: '1rem' }} />
@@ -195,8 +204,8 @@ const Landing = () => {
                 <div className="footer-bottom">
                     <p>&copy; 2026 4TP. All rights reserved.</p>
                 </div>
-            </footer>
-        </div>
+            </footer >
+        </div >
     );
 };
 

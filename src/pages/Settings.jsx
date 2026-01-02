@@ -1,34 +1,42 @@
 import React, { useState } from 'react';
-import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
-import Button from '../components/ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
 import { useStore } from '../contexts/StoreContext';
-import { Sun, Moon, Check, Receipt, ReceiptText, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import { Sun, Moon, Check, Receipt, ReceiptText, AlertTriangle, LogOut } from 'lucide-react';
 
 const Settings = () => {
     const { theme, toggleTheme } = useTheme();
     const { taxEnabled, toggleTax, TAX_RATE } = useStore();
-    const [showTaxConfirmation, setShowTaxConfirmation] = useState(false);
+    const navigate = useNavigate();
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [pendingTaxValue, setPendingTaxValue] = useState(null);
 
     const handleTaxToggle = (newValue) => {
         // If user is trying to change the current setting, show confirmation
         if (newValue !== taxEnabled) {
             setPendingTaxValue(newValue);
-            setShowTaxConfirmation(true);
+            setShowConfirmModal(true);
         }
     };
 
     const confirmTaxChange = () => {
         toggleTax(pendingTaxValue);
-        setShowTaxConfirmation(false);
+        setShowConfirmModal(false);
         setPendingTaxValue(null);
     };
 
     const cancelTaxChange = () => {
-        setShowTaxConfirmation(false);
+        setShowConfirmModal(false);
         setPendingTaxValue(null);
+    };
+
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/');
     };
 
     return (
@@ -65,8 +73,11 @@ const Settings = () => {
                         Government fees are always 0% VAT (pass-through).
                     </p>
                 </div>
+
+                {/* Button Group - Simplified */}
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button
+                        type="button"
                         onClick={() => handleTaxToggle(true)}
                         style={{
                             flex: 1,
@@ -82,7 +93,8 @@ const Settings = () => {
                             color: taxEnabled ? 'var(--success)' : 'var(--text-primary)',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            fontSize: '1rem'
                         }}
                     >
                         <Receipt size={28} />
@@ -91,6 +103,7 @@ const Settings = () => {
                         {taxEnabled && <Check size={18} />}
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleTaxToggle(false)}
                         style={{
                             flex: 1,
@@ -106,7 +119,8 @@ const Settings = () => {
                             color: !taxEnabled ? 'var(--warning)' : 'var(--text-primary)',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            fontSize: '1rem'
                         }}
                     >
                         <ReceiptText size={28} />
@@ -169,6 +183,24 @@ const Settings = () => {
                 </div>
             </Card>
 
+            {/* Logout Section */}
+            <Card title="Account" style={{ marginTop: '1rem' }}>
+                <Button
+                    variant="secondary"
+                    onClick={() => setShowLogoutModal(true)}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    <LogOut size={18} />
+                    Logout
+                </Button>
+            </Card>
+
             {/* About */}
             <Card title="About" style={{ marginTop: '1rem' }}>
                 <div style={{ color: 'var(--text-secondary)' }}>
@@ -179,9 +211,52 @@ const Settings = () => {
                     </p>
                 </div>
             </Card>
+
+            {/* Tax Confirmation Modal */}
+            <Modal
+                isOpen={showConfirmModal}
+                onClose={cancelTaxChange}
+                title="Confirm Tax Setting Change"
+            >
+                <div style={{ padding: '1rem' }}>
+                    <p style={{ margin: '0 0 1.5rem', fontSize: '1rem', color: 'var(--text-muted)' }}>
+                        {pendingTaxValue
+                            ? 'Enable 5% VAT on all service fees? This will affect all future invoices and reports.'
+                            : 'Disable VAT completely? No tax will be calculated on any service fees.'}
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                        <Button variant="secondary" onClick={cancelTaxChange}>
+                            Cancel
+                        </Button>
+                        <Button onClick={confirmTaxChange}>
+                            Confirm Change
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Logout Confirmation Modal */}
+            <Modal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                title="Confirm Logout"
+            >
+                <div style={{ padding: '1rem' }}>
+                    <p style={{ margin: '0 0 1.5rem', fontSize: '1rem', color: 'var(--text-muted)' }}>
+                        Are you sure you want to logout? You'll be redirected to the landing page.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                        <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleLogout}>
+                            Yes, Logout
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
 
 export default Settings;
-

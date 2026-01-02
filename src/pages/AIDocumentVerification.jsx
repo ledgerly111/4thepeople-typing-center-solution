@@ -140,20 +140,10 @@ const AIDocumentVerification = () => {
                                 marginBottom: '1rem'
                             }}
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'space-between' }}>
-                            <select
-                                value={documentType}
-                                onChange={(e) => setDocumentType(e.target.value)}
-                                className="input"
-                                style={{ flex: 1 }}
-                            >
-                                <option value="emirates_id">Emirates ID</option>
-                                <option value="passport">Passport</option>
-                                <option value="visa">Visa Application</option>
-                                <option value="certificate">Certificate</option>
-                            </select>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                             <Button variant="secondary" onClick={clearData}>
-                                <Trash2 size={16} /> Clear
+                                <Trash2 size={16} />
+                                Clear
                             </Button>
                         </div>
                     </div>

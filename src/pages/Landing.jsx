@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Shield, BarChart3, Wallet, FileCheck, CheckCircle } from 'lucide-react';
 import './Landing.css';
 
 const Landing = () => {
     const navigate = useNavigate();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 100);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleLogin = () => {
         navigate('/dashboard'); // Bypassing login for now - goes directly to dashboard
@@ -52,7 +62,7 @@ const Landing = () => {
             <section className="hero">
                 <div className="hero-content">
                     <div className="hero-text">
-                        <div className="logo-large">
+                        <div className={`logo-large ${scrolled ? 'scrolled' : ''}`}>
                             <img src="/4tp-logo.png" alt="4TP Logo" className="logo-image" />
                         </div>
                         <h1 className="hero-title">

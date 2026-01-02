@@ -6,8 +6,14 @@ const BottomNav = () => {
     const navItems = [
         { icon: Home, label: 'Home', path: '/dashboard' },
         { icon: Zap, label: 'Quick', path: 'quick-create' },
+        { icon: Users, label: 'Customers', path: 'customers' },
+        { icon: Briefcase, label: 'Services', path: 'services' },
         { icon: FileText, label: 'Invoices', path: 'invoices' },
+        { icon: ClipboardList, label: 'Orders', path: 'work-orders' },
+        { icon: Wallet, label: 'Wallet', path: 'wallet' },
+        { icon: Receipt, label: 'Expenses', path: 'expenses' },
         { icon: BarChart3, label: 'Reports', path: 'reports' },
+        { icon: List, label: 'Trans', path: 'transactions' },
         { icon: Settings, label: 'Settings', path: 'settings' },
     ];
 

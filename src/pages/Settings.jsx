@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
 import { useStore } from '../contexts/StoreContext';
-import { Sun, Moon, Check, Receipt, ReceiptText } from 'lucide-react';
+import { Sun, Moon, Check, Receipt, ReceiptText, AlertTriangle } from 'lucide-react';
 
 const Settings = () => {
     const { theme, toggleTheme } = useTheme();
     const { taxEnabled, toggleTax, TAX_RATE } = useStore();
+    const [showTaxConfirmation, setShowTaxConfirmation] = useState(false);
+    const [pendingTaxValue, setPendingTaxValue] = useState(null);
+
+    const handleTaxToggle = (newValue) => {
+        // If user is trying to change the current setting, show confirmation
+        if (newValue !== taxEnabled) {
+            setPendingTaxValue(newValue);
+            setShowTaxConfirmation(true);
+        }
+    };
+
+    const confirmTaxChange = () => {
+        toggleTax(pendingTaxValue);
+        setShowTaxConfirmation(false);
+        setPendingTaxValue(null);
+    };
+
+    const cancelTaxChange = () => {
+        setShowTaxConfirmation(false);
+        setPendingTaxValue(null);
+    };
 
     return (
         <div>
@@ -44,7 +67,7 @@ const Settings = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button
-                        onClick={() => toggleTax(true)}
+                        onClick={() => handleTaxToggle(true)}
                         style={{
                             flex: 1,
                             display: 'flex',
@@ -68,7 +91,7 @@ const Settings = () => {
                         {taxEnabled && <Check size={18} />}
                     </button>
                     <button
-                        onClick={() => toggleTax(false)}
+                        onClick={() => handleTaxToggle(false)}
                         style={{
                             flex: 1,
                             display: 'flex',

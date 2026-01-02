@@ -69,13 +69,18 @@ const Reports = () => {
             .filter(inv => inv.status === 'Pending')
             .reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
 
+
         // Expenses
         const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
-        const netProfit = cashReceived - totalExpenses;
-        const grossProfit = serviceFees - totalExpenses;
 
         // Tax collected (5% of service fees if tax enabled)
-        const taxCollected = serviceFees * 0.05;
+        const taxCollected = taxEnabled ? serviceFees * TAX_RATE : 0;
+
+        // Profit calculations
+        // IMPORTANT: Tax is government's money, not profit - so we deduct it
+        const netProfit = cashReceived - totalExpenses - taxCollected;
+        const grossProfit = serviceFees - totalExpenses - taxCollected;
+
 
         // Payment method breakdown
         const paymentMethods = filteredInvoices.reduce((acc, inv) => {

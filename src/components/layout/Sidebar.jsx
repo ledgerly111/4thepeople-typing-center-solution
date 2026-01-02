@@ -11,18 +11,18 @@ const Sidebar = () => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const navItems = [
-        { icon: Home, label: 'Dashboard', path: '/' },
-        { icon: Zap, label: 'Quick Create', path: '/quick-create' },
-        { icon: Users, label: 'Customers', path: '/customers' },
-        { icon: Briefcase, label: 'Services', path: '/services' },
-        { icon: FileText, label: 'Invoices', path: '/invoices' },
-        { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
-        { icon: Shield, label: 'AI Verify', path: '/ai-verify' },
-        { icon: Wallet, label: 'Wallet', path: '/wallet' },
-        { icon: Receipt, label: 'Expenses', path: '/expenses' },
-        { icon: BarChart3, label: 'Reports', path: '/reports' },
-        { icon: List, label: 'Transactions', path: '/transactions' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
+        { icon: Home, label: 'Dashboard', path: '' }, // Empty string = /dashboard
+        { icon: Zap, label: 'Quick Create', path: 'quick-create' },
+        { icon: Users, label: 'Customers', path: 'customers' },
+        { icon: Briefcase, label: 'Services', path: 'services' },
+        { icon: FileText, label: 'Invoices', path: 'invoices' },
+        { icon: ClipboardList, label: 'Work Orders', path: 'work-orders' },
+        { icon: Shield, label: 'AI Verify', path: 'ai-verify' },
+        { icon: Wallet, label: 'Wallet', path: 'wallet' },
+        { icon: Receipt, label: 'Expenses', path: 'expenses' },
+        { icon: BarChart3, label: 'Reports', path: 'reports' },
+        { icon: List, label: 'Transactions', path: 'transactions' },
+        { icon: Settings, label: 'Settings', path: 'settings' },
     ];
 
     const handleLogoutClick = () => {

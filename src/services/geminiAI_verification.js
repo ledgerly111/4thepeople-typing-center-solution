@@ -16,26 +16,47 @@ export const detectDocumentFraud = async (base64Image, mimeType = 'image/jpeg') 
         throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
     }
 
-    const prompt = `You are a document fraud detection expert. Analyze this document image for signs of forgery or manipulation.
+    // Get current date for context
+    const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 
-Check for the following fraud indicators:
+    const prompt = `IMPORTANT: Today's date is ${currentDate}. Use this as reference for all date validations.
+
+You are a document fraud detection expert. Analyze this image carefully.
+
+FIRST, identify what type of document this is:
+- Emirates ID
+- Passport
+- Visa
+- Certificate
+- Other document
+- NOT a document (photo, random image, etc.)
+
+If this is NOT an identity document (Emirates ID, Passport, Visa, or Certificate), clearly state that in your response.
+
+If it IS a document, check for fraud indicators:
 1. Photoshop artifacts or inconsistent lighting
 2. Mismatched fonts or font sizes
 3. Irregular spacing or alignment
 4. Signs of tampering with watermarks, seals, or stamps
-5. Inconsistent image quality across different parts of the document
-6. Suspicious patterns that indicate photo replacement
+5. Inconsistent image quality across different parts
+6. Suspicious patterns indicating photo replacement
 7. Altered or manipulated text
 8. Missing or fake security features
 9. Color inconsistencies
+10. Dates that don't make sense (e.g., expiry before issue, future dates for past events)
 
 Return a JSON object with this exact format:
 {
+    "documentType": "what type of document this is (or 'not a document')",
     "isFraudulent": true or false,
-    "confidence": 0.0 to 1.0 (how confident you are in this assessment),
+    "confidence": 0.0 to 1.0,
     "riskLevel": "low", "medium", or "high",
-    "indicators": ["list of specific fraud indicators found"],
-    "recommendations": ["what to verify manually"]
+    "indicators": ["specific fraud indicators or reasons why this isn't the expected document type"],
+    "recommendations": ["what to verify manually or actions to take"]
 }
 
 Be thorough but fair. Only mark as fraudulent if you find clear evidence.
@@ -135,12 +156,24 @@ export const extractAndValidateData = async (base64Image, documentType, mimeType
 }`
     };
 
-    const prompt = `You are a data extraction and validation expert.
+    // Get current date for context
+    const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const prompt = `IMPORTANT: Today's date is ${currentDate}. Use this as your reference point for ALL date validations.
+
+You are a data extraction and validation expert.
 
 ${prompts[documentType] || prompts.certificate}
 
 Also validate the extracted data:
 - Check if all dates are in valid format
+- CRITICAL: Check if dates make logical sense relative to today (${currentDate})
+- For example, issue dates should not be in the future
+- Expiry dates should be after issue dates
 - Check if ID/passport numbers follow correct patterns
 - Identify any missing required fields
 - Flag any inconsistencies
@@ -207,7 +240,16 @@ export const checkCompliance = async (base64Image, documentType, mimeType = 'ima
         throw new Error('Gemini API key not configured.');
     }
 
-    const prompt = `You are a UAE government document compliance expert for ICP/GDRFA/MoHRE submissions.
+    // Get current date for context
+    const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const prompt = `IMPORTANT: Today's date is ${currentDate}. Use this for validating document dates.
+
+You are a UAE government document compliance expert for ICP/GDRFA/MoHRE submissions.
 
 Check if this ${documentType} meets official requirements:
 
@@ -226,7 +268,7 @@ For Documents:
 - All required stamps/seals are present
 - Photo attached securely (if required)
 - No handwritten corrections
-- Valid dates (not expired)
+- Valid dates (not expired relative to ${currentDate})
 - Proper format and layout
 
 Return JSON:

@@ -24,6 +24,7 @@ const BottomNav = () => {
                 <NavLink
                     key={item.path}
                     to={item.path}
+                    end={item.path === '/dashboard'}
                     className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
                 >
                     <item.icon size={18} className="bottom-nav-icon" />

@@ -25,19 +25,25 @@ export const detectDocumentFraud = async (base64Image, mimeType = 'image/jpeg') 
 
     const prompt = `IMPORTANT: Today's date is ${currentDate}. Use this as reference for all date validations.
 
-You are a document fraud detection expert. Analyze this image carefully.
+You are a document fraud detection expert with a sense of humor. Analyze this image carefully.
 
-FIRST, identify what type of document this is:
-- Emirates ID
-- Passport
-- Visa
-- Certificate
-- Other document
-- NOT a document (photo, random image, etc.)
+FIRST, identify what type of image this is:
+- Emirates ID (official UAE identity card)
+- Passport (travel document)
+- Visa (immigration document)
+- Certificate (educational/professional certificate)
+- Other official document
+- NOT A DOCUMENT (photo of person, animal, food, object, scenery, etc.)
 
-If this is NOT an identity document (Emirates ID, Passport, Visa, or Certificate), clearly state that in your response.
+IF THIS IS NOT AN OFFICIAL DOCUMENT:
+Respond with humor and helpfulness! Examples:
+- For a photo of food: "That looks delicious! 🍎 But I'm a document verification AI, not a food critic. Please upload an Emirates ID, Passport, Visa, or Certificate instead."
+- For a photo of a person: "Nice photo! 😊 But I need to see an official identity document (Emirates ID, Passport, Visa, or Certificate), not a selfie!"
+- For a photo of an animal: "Cute! 🐱 But unless this cat has an Emirates ID, I can't help. Please upload an official document."
+- For random objects: "Interesting! But I'm designed to verify identity documents, not [describe what you see]. Upload an Emirates ID, Passport, Visa, or Certificate."
 
-If it IS a document, check for fraud indicators:
+IF IT IS AN OFFICIAL DOCUMENT:
+Check for fraud indicators:
 1. Photoshop artifacts or inconsistent lighting
 2. Mismatched fonts or font sizes
 3. Irregular spacing or alignment
@@ -51,15 +57,15 @@ If it IS a document, check for fraud indicators:
 
 Return a JSON object with this exact format:
 {
-    "documentType": "what type of document this is (or 'not a document')",
-    "isFraudulent": true or false,
+    "documentType": "exact type (e.g., 'Emirates ID', 'Passport', 'Not a document - [description]')",
+    "isFraudulent": true or false (false if not a document),
     "confidence": 0.0 to 1.0,
     "riskLevel": "low", "medium", or "high",
-    "indicators": ["specific fraud indicators or reasons why this isn't the expected document type"],
-    "recommendations": ["what to verify manually or actions to take"]
+    "indicators": ["specific fraud indicators OR funny description of what this actually is"],
+    "recommendations": ["if not a document: funny message + 'Please upload an Emirates ID, Passport, Visa, or Certificate.' If document: what to verify manually"]
 }
 
-Be thorough but fair. Only mark as fraudulent if you find clear evidence.
+Be thorough, fair, and add personality when appropriate!
 Return ONLY valid JSON, no additional text.`;
 
     try {

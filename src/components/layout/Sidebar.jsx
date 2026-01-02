@@ -11,7 +11,7 @@ const Sidebar = () => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const navItems = [
-        { icon: Home, label: 'Dashboard', path: '' }, // Empty string = /dashboard
+        { icon: Home, label: 'Dashboard', path: '/dashboard' }, // Absolute path to dashboard
         { icon: Zap, label: 'Quick Create', path: 'quick-create' },
         { icon: Users, label: 'Customers', path: 'customers' },
         { icon: Briefcase, label: 'Services', path: 'services' },

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 const Reports = () => {
-    const { invoices, expenses, workOrders, govtFeeCards, customers } = useStore();
+    const { invoices, expenses, workOrders, govtFeeCards, customers, taxEnabled, TAX_RATE } = useStore();
     const [reportType, setReportType] = useState('daily');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
@@ -73,6 +73,9 @@ const Reports = () => {
         const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
         const netProfit = cashReceived - totalExpenses;
         const grossProfit = serviceFees - totalExpenses;
+
+        // Tax collected (5% of service fees if tax enabled)
+        const taxCollected = serviceFees * 0.05;
 
         // Payment method breakdown
         const paymentMethods = filteredInvoices.reduce((acc, inv) => {
@@ -139,7 +142,8 @@ const Reports = () => {
             quickSales: quickSales.length,
             regularInvoices: regularInvoices.length,
             totalTransactions: filteredInvoices.length,
-            customerStats
+            customerStats,
+            taxCollected
         };
     }, [filteredInvoices, filteredExpenses, filteredWorkOrders]);
 
@@ -357,6 +361,24 @@ const Reports = () => {
                         </div>
                     </div>
                 </Card>
+
+                {/* Tax Collected - only show if tax is enabled */}
+                {taxEnabled && (
+                    <Card>
+                        <div style={{ textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <Receipt size={20} style={{ color: '#6366f1' }} />
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>VAT Collected (5%)</span>
+                            </div>
+                            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#6366f1' }}>
+                                AED {stats.taxCollected.toFixed(2)}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                On service fees
+                            </div>
+                        </div>
+                    </Card>
+                )}
             </div>
 
             {/* Revenue Breakdown */}

@@ -19,6 +19,7 @@ import Wallet from './pages/Wallet';
 import WorkOrderCreate from './pages/WorkOrderCreate';
 import InvoiceCreate from './pages/InvoiceCreate';
 import CustomerDetail from './pages/CustomerDetail';
+import QuickCreate from './pages/QuickCreate';
 import './App.css';
 
 // ===========================================
@@ -40,6 +41,7 @@ function App() {
               {/* Main app routes - NO protection for now */}
               <Route path="/" element={<DashboardLayout />}>
                 <Route index element={<Dashboard />} />
+                <Route path="quick-create" element={<QuickCreate />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="customers/:id" element={<CustomerDetail />} />
                 <Route path="services" element={<Services />} />

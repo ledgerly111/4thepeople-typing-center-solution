@@ -1,13 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, Users, Briefcase, FileText, ClipboardList, List, Settings, BarChart3, Receipt, Shield, LogOut, Wallet } from 'lucide-react';
+import { Home, Users, Briefcase, FileText, ClipboardList, List, Settings, BarChart3, Receipt, Shield, LogOut, Wallet, Zap } from 'lucide-react';
 
 const Sidebar = () => {
     const { profile, isSuperAdmin, signOut } = useAuth();
 
     const navItems = [
         { icon: Home, label: 'Dashboard', path: '/' },
+        { icon: Zap, label: 'Quick Create', path: '/quick-create' },
         { icon: Users, label: 'Customers', path: '/customers' },
         { icon: Briefcase, label: 'Services', path: '/services' },
         { icon: FileText, label: 'Invoices', path: '/invoices' },

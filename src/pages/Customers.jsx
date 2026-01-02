@@ -4,8 +4,9 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
+import IDScanner from '../components/ui/IDScanner';
 import { supabase } from '../services/supabase';
-import { Search, Plus, MoreVertical, Edit, Trash2, Eye, DollarSign, FileText, Clock, CheckCircle } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, Eye, DollarSign, FileText, Clock, CheckCircle, Scan } from 'lucide-react';
 
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
@@ -13,6 +14,7 @@ const Customers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState(null);
+    const [showScanner, setShowScanner] = useState(false);
     const navigate = useNavigate();
 
     // Form state
@@ -66,6 +68,17 @@ const Customers = () => {
             notes: ''
         });
         setIsModalOpen(true);
+    };
+
+    // Handle scanned ID data
+    const handleScanComplete = (data) => {
+        setFormData({
+            ...formData,
+            name: data.name || formData.name,
+            emirates_id: data.emirates_id || formData.emirates_id,
+            nationality: data.nationality || formData.nationality
+        });
+        setShowScanner(false);
     };
 
     const openEditModal = (customer) => {
@@ -278,6 +291,35 @@ const Customers = () => {
                 onClose={() => setIsModalOpen(false)}
                 title={editingCustomer ? 'Edit Customer' : 'Add New Customer'}
             >
+                {/* Scan ID Button */}
+                {!editingCustomer && (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <button
+                            onClick={() => setShowScanner(true)}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                padding: '0.75rem',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            <Scan size={18} />
+                            Scan Emirates ID / Passport
+                        </button>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', margin: '0.5rem 0 0' }}>
+                            Auto-fill customer details using AI
+                        </p>
+                    </div>
+                )}
                 <div className="form-group">
                     <label className="form-label">Name *</label>
                     <input
@@ -388,6 +430,14 @@ const Customers = () => {
                     </Button>
                 </div>
             </Modal>
+
+            {/* ID Scanner Modal */}
+            {showScanner && (
+                <IDScanner
+                    onScanComplete={handleScanComplete}
+                    onClose={() => setShowScanner(false)}
+                />
+            )}
         </div>
     );
 };

@@ -31,6 +31,25 @@ export const StoreProvider = ({ children }) => {
     const [cardTransactions, setCardTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Tax/VAT settings - persisted in localStorage
+    const [taxEnabled, setTaxEnabled] = useState(() => {
+        const saved = localStorage.getItem('taxEnabled');
+        return saved !== null ? JSON.parse(saved) : true; // Default: tax enabled
+    });
+    const TAX_RATE = 0.05; // 5% VAT
+
+    // Toggle tax and persist to localStorage
+    const toggleTax = (enabled) => {
+        setTaxEnabled(enabled);
+        localStorage.setItem('taxEnabled', JSON.stringify(enabled));
+    };
+
+    // Calculate tax amount for service fee
+    const calculateTax = (serviceFee) => {
+        if (!taxEnabled) return 0;
+        return serviceFee * TAX_RATE;
+    };
+
     // Fetch all data on mount
     useEffect(() => {
         fetchAllData();
@@ -685,7 +704,12 @@ export const StoreProvider = ({ children }) => {
             toggleGovtFeeLink,
             getLinkedCards,
             getCardTransactions,
-            refreshData: fetchAllData
+            refreshData: fetchAllData,
+            // Tax settings
+            taxEnabled,
+            toggleTax,
+            calculateTax,
+            TAX_RATE
         }}>
             {children}
         </StoreContext.Provider>

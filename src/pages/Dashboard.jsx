@@ -79,12 +79,34 @@ const Dashboard = () => {
                 onComplete={handleQuickSaleComplete}
             />
 
-            {/* Welcome Header */}
-            <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Welcome back! 👋</h1>
-                <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                    Here's what's happening today
-                </p>
+            {/* Welcome Header with Quick Create Button */}
+            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Welcome back! 👋</h1>
+                    <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                        Here's what's happening today
+                    </p>
+                </div>
+                <Link to="/quick-create" style={{ textDecoration: 'none' }}>
+                    <button style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem 1.5rem',
+                        background: 'linear-gradient(135deg, var(--accent) 0%, #f59e0b 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '1rem',
+                        boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                        transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}>
+                        <Zap size={20} />
+                        Quick Create
+                    </button>
+                </Link>
             </div>
 
             {/* Stats Grid - 4 columns */}

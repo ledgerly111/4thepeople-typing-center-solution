@@ -557,8 +557,8 @@ const WorkOrders = () => {
                                     <tr key={order.id} style={{ backgroundColor: isOverdue(order.dueDate, order.status) ? 'rgba(220, 53, 69, 0.05)' : 'transparent' }}>
                                         <td style={{ fontWeight: '600' }}>#{order.id}</td>
                                         <td>
-                                            <div>{order.customerName}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.customerMobile}</div>
+                                            <div>{order.customer_name || order.customerName || 'Walk-in'}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.customer_mobile || order.customerMobile || '-'}</div>
                                         </td>
                                         <td>
                                             {order.services.slice(0, 2).map((s, i) => (

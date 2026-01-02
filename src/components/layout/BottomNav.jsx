@@ -1,9 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarChart3, Receipt, Wallet } from 'lucide-react';
+import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarChart3, Receipt, Wallet, Zap } from 'lucide-react';
 
 const BottomNav = () => {
     const navItems = [
+        { icon: Zap, label: 'Create', path: '/quick-create' },
         { icon: Home, label: 'Home', path: '/' },
         { icon: FileText, label: 'Invoices', path: '/invoices' },
         { icon: ClipboardList, label: 'Orders', path: '/work-orders' },

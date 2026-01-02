@@ -21,6 +21,7 @@ import InvoiceCreate from './pages/InvoiceCreate';
 import CustomerDetail from './pages/CustomerDetail';
 import QuickCreate from './pages/QuickCreate';
 import AIDocumentVerification from './pages/AIDocumentVerification';
+import Landing from './pages/Landing';
 import './App.css';
 
 // ===========================================
@@ -36,11 +37,14 @@ function App() {
         <StoreProvider>
           <Router>
             <Routes>
+              {/* Landing Page - Public */}
+              <Route path="/" element={<Landing />} />
+
               {/* Login route - always available */}
               <Route path="/login" element={<Login />} />
 
-              {/* Main app routes - NO protection for now */}
-              <Route path="/" element={<DashboardLayout />}>
+              {/* Main app routes - ERP Dashboard */}
+              <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="quick-create" element={<QuickCreate />} />
                 <Route path="customers" element={<Customers />} />

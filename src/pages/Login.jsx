@@ -1,148 +1,156 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
+import { Shield, User, Mail, Lock, AlertCircle } from 'lucide-react';
+import './Login.css';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: ''
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { signIn } = useAuth();
-    const navigate = useNavigate();
+    // Hardcoded admin credentials
+    const ADMIN_CREDENTIALS = {
+        name: 'aadhilsalim',
+        email: 'aadhila003@gmail.com',
+        password: 'aadhilsalim@8089385071'
+    };
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+        setError(''); // Clear error when user types
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         setError('');
 
-        if (!email || !password) {
-            setError('Please enter email and password');
-            return;
-        }
+        // Simulate loading
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        setLoading(true);
-
-        try {
-            const { data, error: signInError } = await signIn(email, password);
-            if (signInError) {
-                setError(signInError.message);
-            } else {
-                navigate('/');
-            }
-        } catch (err) {
-            setError('An unexpected error occurred');
-        } finally {
+        // Check if credentials match admin
+        if (
+            formData.name === ADMIN_CREDENTIALS.name &&
+            formData.email === ADMIN_CREDENTIALS.email &&
+            formData.password === ADMIN_CREDENTIALS.password
+        ) {
+            // Success! Navigate to Super Admin panel
+            localStorage.setItem('isAdmin', 'true');
+            localStorage.setItem('adminName', formData.name);
+            navigate('/dashboard/super-admin');
+        } else {
+            // Invalid credentials
+            setError('Invalid credentials. Please check your name, email, and password.');
             setLoading(false);
         }
     };
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--bg)',
-            padding: '1rem'
-        }}>
-            <div style={{ width: '100%', maxWidth: '400px' }}>
-                {/* Logo */}
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{
-                        width: '80px',
-                        height: '80px',
-                        background: 'var(--accent)',
-                        borderRadius: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 1rem',
-                        fontSize: '2rem',
-                        fontWeight: '800',
-                        color: 'white'
-                    }}>
-                        4TP
-                    </div>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem' }}>4 The People</h1>
-                    <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0' }}>
-                        Typing Center Management
-                    </p>
-                </div>
-
-                <Card>
-                    <h2 style={{ margin: '0 0 1.5rem', textAlign: 'center' }}>
-                        Welcome Back
-                    </h2>
-
-                    {error && (
-                        <div style={{
-                            padding: '0.75rem',
-                            background: 'var(--danger)',
-                            color: 'white',
-                            borderRadius: '8px',
-                            marginBottom: '1rem',
-                            fontSize: '0.875rem'
-                        }}>
-                            {error}
+        <div className="login-page">
+            <div className="login-container">
+                <div className="login-card">
+                    {/* Header */}
+                    <div className="login-header">
+                        <div className="login-logo">
+                            <div className="sidebar-logo">4TP</div>
                         </div>
-                    )}
+                        <h1>Welcome Back</h1>
+                        <p>Sign in to access the admin panel</p>
+                    </div>
 
-                    <form onSubmit={handleSubmit}>
+                    {/* Login Form */}
+                    <form onSubmit={handleSubmit} className="login-form">
+                        {error && (
+                            <div className="login-error">
+                                <AlertCircle size={18} />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
                         <div className="form-group">
-                            <label className="form-label">Email</label>
+                            <label htmlFor="name">
+                                <User size={18} />
+                                Full Name
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="Enter your full name"
+                                required
+                                autoComplete="name"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="email">
+                                <Mail size={18} />
+                                Email Address
+                            </label>
                             <input
                                 type="email"
-                                className="input"
-                                placeholder="your@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={loading}
+                                id="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Enter your email"
+                                required
+                                autoComplete="email"
                             />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Password</label>
+                            <label htmlFor="password">
+                                <Lock size={18} />
+                                Password
+                            </label>
                             <input
                                 type="password"
-                                className="input"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
+                                id="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Enter your password"
+                                required
+                                autoComplete="current-password"
                             />
                         </div>
 
-                        <Button
+                        <button
                             type="submit"
-                            style={{ width: '100%', marginTop: '0.5rem' }}
+                            className="login-button"
                             disabled={loading}
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
-                        </Button>
+                            {loading ? (
+                                <>
+                                    <div className="spinner-small" />
+                                    Signing In...
+                                </>
+                            ) : (
+                                <>
+                                    <Shield size={18} />
+                                    Sign In to Admin Panel
+                                </>
+                            )}
+                        </button>
                     </form>
 
-                    <div style={{
-                        marginTop: '1.5rem',
-                        textAlign: 'center',
-                        paddingTop: '1rem',
-                        borderTop: '1px solid var(--border)',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)'
-                    }}>
-                        Contact your administrator if you need an account.
+                    {/* Footer */}
+                    <div className="login-footer">
+                        <p>4TP - For The People</p>
+                        <p className="login-note">Super Admin Access Only</p>
                     </div>
-                </Card>
-
-                <p style={{
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                    fontSize: '0.75rem',
-                    marginTop: '2rem'
-                }}>
-                    © 2025 4 The People. All rights reserved.
-                </p>
+                </div>
             </div>
         </div>
     );

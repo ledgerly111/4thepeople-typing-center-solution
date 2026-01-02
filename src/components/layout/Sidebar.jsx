@@ -13,6 +13,7 @@ const Sidebar = () => {
         { icon: Briefcase, label: 'Services', path: '/services' },
         { icon: FileText, label: 'Invoices', path: '/invoices' },
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
+        { icon: Shield, label: 'AI Verify', path: '/ai-verify' },
         { icon: Wallet, label: 'Wallet', path: '/wallet' },
         { icon: Receipt, label: 'Expenses', path: '/expenses' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },

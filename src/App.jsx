@@ -20,6 +20,7 @@ import WorkOrderCreate from './pages/WorkOrderCreate';
 import InvoiceCreate from './pages/InvoiceCreate';
 import CustomerDetail from './pages/CustomerDetail';
 import QuickCreate from './pages/QuickCreate';
+import AIDocumentVerification from './pages/AIDocumentVerification';
 import './App.css';
 
 // ===========================================
@@ -49,6 +50,7 @@ function App() {
                 <Route path="invoices/create" element={<InvoiceCreate />} />
                 <Route path="work-orders" element={<WorkOrders />} />
                 <Route path="work-orders/create" element={<WorkOrderCreate />} />
+                <Route path="ai-verify" element={<AIDocumentVerification />} />
                 <Route path="wallet" element={<Wallet />} />
                 <Route path="expenses" element={<Expenses />} />
                 <Route path="reports" element={<Reports />} />

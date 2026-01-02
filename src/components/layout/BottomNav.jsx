@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarChart3, Receipt, Wallet, Zap } from 'lucide-react';
+import { Home, FileText, ClipboardList, List, Briefcase, Users, Settings, BarChart3, Receipt, Wallet, Zap, Shield } from 'lucide-react';
 
 const BottomNav = () => {
     const navItems = [
@@ -10,6 +10,7 @@ const BottomNav = () => {
         { icon: Briefcase, label: 'Services', path: 'services' },
         { icon: FileText, label: 'Invoices', path: 'invoices' },
         { icon: ClipboardList, label: 'Orders', path: 'work-orders' },
+        { icon: Shield, label: 'AI Verify', path: 'ai-verify' },
         { icon: Wallet, label: 'Wallet', path: 'wallet' },
         { icon: Receipt, label: 'Expenses', path: 'expenses' },
         { icon: BarChart3, label: 'Reports', path: 'reports' },

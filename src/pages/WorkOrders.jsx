@@ -277,7 +277,7 @@ const WorkOrders = () => {
         }
 
         // Create PENDING invoice (Credit) with snake_case for database
-        const newInvoice = await addInvoice({
+        const result = await addInvoice({
             customer_name: customerName,
             customer_mobile: customerMobile,
             customer_email: customerEmail,
@@ -294,7 +294,13 @@ const WorkOrders = () => {
             work_order_id: order.id
         });
 
-        // Link invoice to work order
+        if (!result || !result.success) {
+            alert(`Failed to create invoice: ${result?.error || 'Unknown error'}`);
+            return;
+        }
+
+        const newInvoice = result.data;
+
         // Link invoice to work order
         updateWorkOrder(order.id, {
             invoice_id: newInvoice.id
@@ -364,7 +370,7 @@ const WorkOrders = () => {
         }
 
         // Create PAID invoice with card info
-        const newInvoice = await addInvoice({
+        const result = await addInvoice({
             customer_name: customerName,
             customer_mobile: customerMobile,
             customer_email: customerEmail,
@@ -382,6 +388,13 @@ const WorkOrders = () => {
             govt_fee_card_id: selectedCardId ? parseInt(selectedCardId) : null,
             govt_fee_card_name: cardUsed?.card_name || null
         });
+
+        if (!result || !result.success) {
+            alert(`Failed to create invoice: ${result?.error || 'Unknown error'}`);
+            return;
+        }
+
+        const newInvoice = result.data;
 
         // Link invoice to work order
         updateWorkOrder(order.id, {

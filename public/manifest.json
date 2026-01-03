@@ -1,0 +1,42 @@
+{
+    "name": "4 The People - Typing Center ERP",
+    "short_name": "4TP ERP",
+    "description": "Complete Typing Center Management System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#f97316",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/pwa-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/pwa-icon-512.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/pwa-icon-512.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa-icon-512.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "categories": [
+        "business",
+        "productivity"
+    ],
+    "screenshots": [],
+    "prefer_related_applications": false
+}

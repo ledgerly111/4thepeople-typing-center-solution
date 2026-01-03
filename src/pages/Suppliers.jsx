@@ -4,7 +4,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { supabase } from '../services/supabase';
-import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle, History, FileText } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle, History, FileText, Printer } from 'lucide-react';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -19,6 +19,8 @@ const Suppliers = () => {
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [supplierTransactions, setSupplierTransactions] = useState([]);
     const [loadingTransactions, setLoadingTransactions] = useState(false);
+    const [showVoucherModal, setShowVoucherModal] = useState(false);
+    const [lastPayment, setLastPayment] = useState(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -214,24 +216,30 @@ const Suppliers = () => {
             return;
         }
 
+        const paymentDate = new Date().toISOString().split('T')[0];
+        const paymentRecord = {
+            supplier_id: selectedSupplier.id,
+            supplier_name: selectedSupplier.name,
+            amount: parseFloat(paymentData.amount),
+            description: paymentData.description,
+            invoice_number: paymentData.invoice_number,
+            payment_method: paymentData.payment_method,
+            payment_date: paymentDate,
+            notes: paymentData.notes,
+            status: 'Paid'
+        };
+
         if (!supabase) {
-            alert('✅ Payment recorded (demo mode)');
+            // Demo mode - show voucher
+            setLastPayment(paymentRecord);
             setShowPaymentModal(false);
+            setShowVoucherModal(true);
             return;
         }
 
         const { error } = await supabase
             .from('supplier_transactions')
-            .insert([{
-                supplier_id: selectedSupplier.id,
-                amount: parseFloat(paymentData.amount),
-                description: paymentData.description,
-                invoice_number: paymentData.invoice_number,
-                payment_method: paymentData.payment_method,
-                payment_date: new Date().toISOString().split('T')[0],
-                notes: paymentData.notes,
-                status: 'Paid'
-            }]);
+            .insert([paymentRecord]);
 
         if (error) {
             console.error('Error recording payment:', error);
@@ -239,8 +247,15 @@ const Suppliers = () => {
             return;
         }
 
-        alert('✅ Payment recorded successfully!');
+        // Show voucher modal instead of alert
+        setLastPayment(paymentRecord);
         setShowPaymentModal(false);
+        setShowVoucherModal(true);
+    };
+
+    // Print voucher function
+    const handlePrintVoucher = () => {
+        window.print();
     };
 
     const formatDate = (dateStr) => {
@@ -896,6 +911,111 @@ const Suppliers = () => {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Payment Voucher Modal */}
+            <Modal
+                isOpen={showVoucherModal}
+                onClose={() => setShowVoucherModal(false)}
+                title="✅ Payment Recorded"
+            >
+                {lastPayment && (
+                    <div>
+                        {/* Printable Voucher */}
+                        <div
+                            id="payment-voucher"
+                            style={{
+                                padding: '1.5rem',
+                                border: '2px solid var(--border)',
+                                borderRadius: '12px',
+                                background: 'var(--bg-primary)'
+                            }}
+                        >
+                            {/* Header */}
+                            <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '2px dashed var(--border)', paddingBottom: '1rem' }}>
+                                <h2 style={{ margin: '0 0 0.25rem', color: 'var(--accent)' }}>PAYMENT VOUCHER</h2>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>4 The People Typing Center</div>
+                            </div>
+
+                            {/* Voucher Details */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Date</div>
+                                    <div style={{ fontWeight: '600' }}>{formatDate(lastPayment.payment_date)}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Payment Method</div>
+                                    <div style={{ fontWeight: '600' }}>{lastPayment.payment_method}</div>
+                                </div>
+                            </div>
+
+                            {/* Paid To */}
+                            <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Paid To</div>
+                                <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{lastPayment.supplier_name}</div>
+                            </div>
+
+                            {/* Amount */}
+                            <div style={{
+                                padding: '1.5rem',
+                                background: 'linear-gradient(135deg, rgba(255, 138, 0, 0.15) 0%, rgba(255, 138, 0, 0.05) 100%)',
+                                borderRadius: '8px',
+                                textAlign: 'center',
+                                marginBottom: '1rem'
+                            }}>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Amount Paid</div>
+                                <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--accent)' }}>
+                                    AED {lastPayment.amount.toFixed(2)}
+                                </div>
+                            </div>
+
+                            {/* Invoice/Reference */}
+                            {lastPayment.invoice_number && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Invoice/Reference #</span>
+                                    <span style={{ fontWeight: '600' }}>{lastPayment.invoice_number}</span>
+                                </div>
+                            )}
+
+                            {/* Description */}
+                            {lastPayment.description && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid var(--border)' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Description</span>
+                                    <span style={{ fontWeight: '600' }}>{lastPayment.description}</span>
+                                </div>
+                            )}
+
+                            {/* Notes */}
+                            {lastPayment.notes && (
+                                <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px', fontSize: '0.875rem' }}>
+                                    <strong>Notes:</strong> {lastPayment.notes}
+                                </div>
+                            )}
+
+                            {/* Signature Lines - for print */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem', paddingTop: '1rem', borderTop: '2px dashed var(--border)' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ borderTop: '1px solid var(--text-muted)', marginTop: '2rem', paddingTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        Authorized Signature
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ borderTop: '1px solid var(--text-muted)', marginTop: '2rem', paddingTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        Received By
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+                            <Button variant="secondary" onClick={() => setShowVoucherModal(false)}>Close</Button>
+                            <Button onClick={handlePrintVoucher}>
+                                <Printer size={16} /> Print Voucher
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

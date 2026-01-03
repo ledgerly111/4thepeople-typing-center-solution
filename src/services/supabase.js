@@ -5,11 +5,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Safety check – will throw if you forget to set the vars
+// Warn but don't crash if env vars missing (for demo/development)
 if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-        'Supabase URL or anon key missing! Check your .env file.'
-    );
+    console.warn('Supabase URL or anon key missing! Some features may not work.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client only if we have credentials, otherwise create a dummy
+export const supabase = (supabaseUrl && supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;

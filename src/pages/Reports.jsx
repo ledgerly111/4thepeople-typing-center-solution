@@ -13,9 +13,18 @@ const Reports = () => {
     const [supplierTransactions, setSupplierTransactions] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [reportType, setReportType] = useState('daily');
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-    const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+
+    // Helper to format date as YYYY-MM-DD in local timezone (not UTC)
+    const formatLocalDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const [selectedDate, setSelectedDate] = useState(formatLocalDate(new Date()));
+    const [dateFrom, setDateFrom] = useState(formatLocalDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)));
+    const [dateTo, setDateTo] = useState(formatLocalDate(new Date()));
 
     // Get date range based on report type
     const getDateRange = () => {
@@ -25,11 +34,11 @@ const Reports = () => {
         } else if (reportType === 'weekly') {
             const weekAgo = new Date(today);
             weekAgo.setDate(today.getDate() - 7);
-            return { from: weekAgo.toISOString().split('T')[0], to: today.toISOString().split('T')[0] };
+            return { from: formatLocalDate(weekAgo), to: formatLocalDate(today) };
         } else if (reportType === 'monthly') {
             const monthAgo = new Date(today);
             monthAgo.setMonth(today.getMonth() - 1);
-            return { from: monthAgo.toISOString().split('T')[0], to: today.toISOString().split('T')[0] };
+            return { from: formatLocalDate(monthAgo), to: formatLocalDate(today) };
         } else {
             return { from: dateFrom, to: dateTo };
         }

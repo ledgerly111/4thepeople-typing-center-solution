@@ -226,7 +226,7 @@ const QuickCreate = () => {
                     total: totals.total,
                     status: 'Pending',
                     notes: notes,
-                    items: serviceItems,
+                    services: serviceItems,  // Fixed: was 'items', should be 'services' to match DB
                     due_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
                 });
 

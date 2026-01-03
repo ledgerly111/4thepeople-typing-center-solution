@@ -29,6 +29,7 @@ export const StoreProvider = ({ children }) => {
     const [expenses, setExpenses] = useState([]);
     const [govtFeeCards, setGovtFeeCards] = useState([]);
     const [cardTransactions, setCardTransactions] = useState([]);
+    const [deletedInvoices, setDeletedInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Tax/VAT settings - persisted in localStorage
@@ -165,6 +166,7 @@ export const StoreProvider = ({ children }) => {
         const { data, error } = await supabase
             .from('invoices')
             .select('*')
+            .is('deleted_at', null)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -209,6 +211,108 @@ export const StoreProvider = ({ children }) => {
         setInvoices(prev =>
             prev.map(inv => inv.id === invoiceId ? { ...inv, status } : inv)
         );
+    };
+
+    // Soft delete invoice with audit logging AND reversal of card deductions
+    const softDeleteInvoice = async (invoiceId, reason = '') => {
+        // First, get the invoice to check if it has a work_order_id
+        const { data: invoice, error: fetchError } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
+
+        if (fetchError || !invoice) {
+            console.error('Error fetching invoice:', fetchError);
+            return { success: false, error: 'Invoice not found' };
+        }
+
+        // If invoice has a work_order_id, find and reverse any card deductions
+        if (invoice.work_order_id) {
+            // Find card transactions linked to this work order
+            const { data: cardTxs } = await supabase
+                .from('card_transactions')
+                .select('*')
+                .eq('work_order_id', invoice.work_order_id)
+                .eq('transaction_type', 'Deduction');
+
+            // Refund each card transaction
+            if (cardTxs && cardTxs.length > 0) {
+                for (const tx of cardTxs) {
+                    // Get current card balance
+                    const { data: card } = await supabase
+                        .from('govt_fee_cards')
+                        .select('*')
+                        .eq('id', tx.card_id)
+                        .single();
+
+                    if (card) {
+                        const currentBalance = parseFloat(card.balance) || 0;
+                        const refundAmount = parseFloat(tx.amount) || 0;
+                        const newBalance = currentBalance + refundAmount;
+
+                        // Create refund transaction
+                        await supabase.from('card_transactions').insert([{
+                            card_id: tx.card_id,
+                            transaction_type: 'Refund',
+                            amount: refundAmount,
+                            balance_before: currentBalance,
+                            balance_after: newBalance,
+                            description: `Refund: Invoice #${invoiceId} deleted`,
+                            work_order_id: invoice.work_order_id
+                        }]);
+
+                        // Update card balance
+                        await supabase
+                            .from('govt_fee_cards')
+                            .update({
+                                balance: newBalance,
+                                last_transaction_date: new Date().toISOString()
+                            })
+                            .eq('id', tx.card_id);
+                    }
+                }
+            }
+        }
+
+        // Now soft delete the invoice
+        const { error } = await supabase
+            .from('invoices')
+            .update({
+                deleted_at: new Date().toISOString(),
+                deleted_by: 'Current User',
+                deletion_reason: reason || 'No reason provided'
+            })
+            .eq('id', invoiceId);
+
+        if (error) {
+            console.error('Error deleting invoice:', error);
+            return { success: false, error: error.message };
+        }
+
+        // Refresh govt fee cards to reflect refund
+        await fetchGovtFeeCards();
+
+        // Remove from local state
+        setInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
+        return { success: true, refunded: true };
+    };
+
+    // Get deleted invoices for audit log
+    const getDeletedInvoices = async () => {
+        const { data, error } = await supabase
+            .from('invoices')
+            .select('*')
+            .not('deleted_at', 'is', null)
+            .order('deleted_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching deleted invoices:', error);
+            return [];
+        }
+
+        setDeletedInvoices(data || []);
+        return data || [];
     };
 
     // ========== QUICK SALES ========== 
@@ -705,6 +809,10 @@ export const StoreProvider = ({ children }) => {
             getLinkedCards,
             getCardTransactions,
             refreshData: fetchAllData,
+            // Invoice deletion
+            softDeleteInvoice,
+            getDeletedInvoices,
+            deletedInvoices,
             // Tax settings
             taxEnabled,
             toggleTax,

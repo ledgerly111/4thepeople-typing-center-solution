@@ -4,7 +4,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { supabase } from '../services/supabase';
-import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle, History, FileText, Printer } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle, History, FileText, Printer, AlertTriangle, ClipboardList } from 'lucide-react';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -21,6 +21,15 @@ const Suppliers = () => {
     const [loadingTransactions, setLoadingTransactions] = useState(false);
     const [showVoucherModal, setShowVoucherModal] = useState(false);
     const [lastPayment, setLastPayment] = useState(null);
+
+    // Delete confirmation state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [transactionToDelete, setTransactionToDelete] = useState(null);
+    const [deletionReason, setDeletionReason] = useState('');
+
+    // Deletion logs state
+    const [showDeletionLogs, setShowDeletionLogs] = useState(false);
+    const [deletedTransactions, setDeletedTransactions] = useState([]);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -217,7 +226,9 @@ const Suppliers = () => {
         }
 
         const paymentDate = new Date().toISOString().split('T')[0];
-        const paymentRecord = {
+
+        // Record for UI (Voucher) - includes supplier name
+        const paymentRecordUI = {
             supplier_id: selectedSupplier.id,
             supplier_name: selectedSupplier.name,
             amount: parseFloat(paymentData.amount),
@@ -229,9 +240,21 @@ const Suppliers = () => {
             status: 'Paid'
         };
 
+        // Record for DB - excludes supplier name (it's relational)
+        const paymentRecordDB = {
+            supplier_id: selectedSupplier.id,
+            amount: parseFloat(paymentData.amount),
+            description: paymentData.description,
+            invoice_number: paymentData.invoice_number,
+            payment_method: paymentData.payment_method,
+            payment_date: paymentDate,
+            notes: paymentData.notes,
+            status: 'Paid'
+        };
+
         if (!supabase) {
             // Demo mode - show voucher
-            setLastPayment(paymentRecord);
+            setLastPayment(paymentRecordUI);
             setShowPaymentModal(false);
             setShowVoucherModal(true);
             return;
@@ -239,7 +262,7 @@ const Suppliers = () => {
 
         const { error } = await supabase
             .from('supplier_transactions')
-            .insert([paymentRecord]);
+            .insert([paymentRecordDB]);
 
         if (error) {
             console.error('Error recording payment:', error);
@@ -248,7 +271,7 @@ const Suppliers = () => {
         }
 
         // Show voucher modal instead of alert
-        setLastPayment(paymentRecord);
+        setLastPayment(paymentRecordUI);
         setShowPaymentModal(false);
         setShowVoucherModal(true);
     };
@@ -263,7 +286,7 @@ const Suppliers = () => {
         return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    // Load transactions for a specific supplier
+    // Load transactions for a specific supplier (excluding deleted)
     const loadSupplierTransactions = async (supplierId) => {
         setLoadingTransactions(true);
         setSupplierTransactions([]);
@@ -277,6 +300,7 @@ const Suppliers = () => {
             .from('supplier_transactions')
             .select('*')
             .eq('supplier_id', supplierId)
+            .is('deleted_at', null)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -287,6 +311,68 @@ const Suppliers = () => {
         setLoadingTransactions(false);
     };
 
+    // Load deleted transactions for audit log
+    const loadDeletedTransactions = async (supplierId) => {
+        if (!supabase) return;
+
+        const { data, error } = await supabase
+            .from('supplier_transactions')
+            .select('*')
+            .eq('supplier_id', supplierId)
+            .not('deleted_at', 'is', null)
+            .order('deleted_at', { ascending: false });
+
+        if (error) {
+            console.warn('Error loading deleted transactions:', error.message);
+        } else {
+            setDeletedTransactions(data || []);
+        }
+    };
+
+    // Open delete confirmation modal
+    const confirmDelete = (transaction) => {
+        setTransactionToDelete(transaction);
+        setDeletionReason('');
+        setShowDeleteConfirm(true);
+    };
+
+    // Handle soft delete
+    const handleDeleteTransaction = async () => {
+        if (!transactionToDelete) return;
+
+        if (!supabase) {
+            alert('Database not connected');
+            return;
+        }
+
+        const { error } = await supabase
+            .from('supplier_transactions')
+            .update({
+                deleted_at: new Date().toISOString(),
+                deleted_by: 'Current User', // Replace with actual user if auth is implemented
+                deletion_reason: deletionReason || 'No reason provided'
+            })
+            .eq('id', transactionToDelete.id);
+
+        if (error) {
+            console.error('Error deleting transaction:', error);
+            alert('Failed to delete: ' + error.message);
+            return;
+        }
+
+        // Refresh transactions list
+        await loadSupplierTransactions(selectedSupplier.id);
+        setShowDeleteConfirm(false);
+        setTransactionToDelete(null);
+        setDeletionReason('');
+    };
+
+    // Open deletion logs modal
+    const openDeletionLogs = async () => {
+        await loadDeletedTransactions(selectedSupplier.id);
+        setShowDeletionLogs(true);
+    };
+
     // Open history modal
     const openHistoryModal = async (supplier) => {
         setSelectedSupplier(supplier);
@@ -294,7 +380,7 @@ const Suppliers = () => {
         setShowHistoryModal(true);
     };
 
-    // Calculate total paid to supplier
+    // Calculate total paid to supplier (excluding deleted)
     const getTotalPaid = () => {
         return supplierTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
     };
@@ -891,6 +977,28 @@ const Suppliers = () => {
                                             📝 {t.notes}
                                         </div>
                                     )}
+
+                                    {/* Delete Button */}
+                                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border)' }}>
+                                        <button
+                                            onClick={() => confirmDelete(t)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                padding: '0.375rem 0.75rem',
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid var(--danger)',
+                                                borderRadius: '4px',
+                                                color: 'var(--danger)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '600'
+                                            }}
+                                        >
+                                            <Trash2 size={12} /> Delete
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -901,14 +1009,19 @@ const Suppliers = () => {
                     )}
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                        <Button variant="secondary" onClick={() => setShowHistoryModal(false)}>Close</Button>
-                        <Button onClick={() => {
-                            setShowHistoryModal(false);
-                            openPaymentModal(selectedSupplier);
-                        }}>
-                            <DollarSign size={16} /> Record Payment
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1.5rem', flexWrap: 'wrap' }}>
+                        <Button variant="secondary" onClick={openDeletionLogs} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <ClipboardList size={16} /> Deletion Logs
                         </Button>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <Button variant="secondary" onClick={() => setShowHistoryModal(false)}>Close</Button>
+                            <Button onClick={() => {
+                                setShowHistoryModal(false);
+                                openPaymentModal(selectedSupplier);
+                            }}>
+                                <DollarSign size={16} /> Record Payment
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </Modal>
@@ -1016,6 +1129,158 @@ const Suppliers = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                title="⚠️ Confirm Deletion"
+            >
+                {transactionToDelete && (
+                    <div>
+                        <div style={{
+                            padding: '1rem',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: '8px',
+                            marginBottom: '1rem',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem'
+                        }}>
+                            <AlertTriangle size={24} color="var(--danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: 'var(--danger)' }}>
+                                    Are you sure you want to delete this transaction?
+                                </div>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                    This will reverse the effect on reports and totals.
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Transaction Details */}
+                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ color: 'var(--text-muted)' }}>Amount</span>
+                                <span style={{ fontWeight: '700', color: 'var(--success)' }}>AED {parseFloat(transactionToDelete.amount || 0).toFixed(2)}</span>
+                            </div>
+                            {transactionToDelete.invoice_number && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>Invoice #</span>
+                                    <span style={{ fontWeight: '600' }}>{transactionToDelete.invoice_number}</span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-muted)' }}>Date</span>
+                                <span>{formatDate(transactionToDelete.payment_date || transactionToDelete.created_at)}</span>
+                            </div>
+                        </div>
+
+                        {/* Deletion Reason */}
+                        <div className="form-group">
+                            <label className="form-label">Reason for Deletion (Optional)</label>
+                            <textarea
+                                className="input"
+                                value={deletionReason}
+                                onChange={(e) => setDeletionReason(e.target.value)}
+                                placeholder="Why is this transaction being deleted?"
+                                rows={2}
+                            />
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+                            <Button
+                                onClick={handleDeleteTransaction}
+                                style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            >
+                                <Trash2 size={16} /> Yes, Delete
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Deletion Logs Modal */}
+            <Modal
+                isOpen={showDeletionLogs}
+                onClose={() => setShowDeletionLogs(false)}
+                title="🗂️ Deletion Logs"
+            >
+                <div>
+                    {deletedTransactions.length > 0 ? (
+                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            {deletedTransactions.map((t, index) => (
+                                <div
+                                    key={t.id || index}
+                                    style={{
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--danger)',
+                                        marginBottom: '0.75rem',
+                                        background: 'rgba(239, 68, 68, 0.05)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                        <div style={{ fontWeight: '600', color: 'var(--danger)', textDecoration: 'line-through' }}>
+                                            AED {parseFloat(t.amount || 0).toFixed(2)}
+                                        </div>
+                                        <span style={{
+                                            padding: '0.125rem 0.375rem',
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            color: 'var(--danger)',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600'
+                                        }}>
+                                            DELETED
+                                        </span>
+                                    </div>
+
+                                    {t.invoice_number && (
+                                        <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                                            Invoice: <strong>{t.invoice_number}</strong>
+                                        </div>
+                                    )}
+
+                                    {/* Deletion Info */}
+                                    <div style={{
+                                        marginTop: '0.75rem',
+                                        padding: '0.75rem',
+                                        background: 'var(--bg-accent)',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Deleted By</span>
+                                            <span style={{ fontWeight: '600' }}>{t.deleted_by || 'Unknown'}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>Deleted At</span>
+                                            <span>{t.deleted_at ? new Date(t.deleted_at).toLocaleString('en-GB') : 'N/A'}</span>
+                                        </div>
+                                        {t.deletion_reason && (
+                                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'var(--bg-primary)', borderRadius: '4px' }}>
+                                                <strong>Reason:</strong> {t.deletion_reason}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            No deleted transactions found for this supplier
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                        <Button variant="secondary" onClick={() => setShowDeletionLogs(false)}>Close</Button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

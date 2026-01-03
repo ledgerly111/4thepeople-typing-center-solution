@@ -37,7 +37,7 @@ const Reports = () => {
 
     const dateRange = getDateRange();
 
-    // Load suppliers and their transactions
+    // Load suppliers and their transactions (excluding deleted)
     useEffect(() => {
         const loadSupplierData = async () => {
             if (!supabase) return;
@@ -49,10 +49,11 @@ const Reports = () => {
                 .order('name');
             if (suppData) setSuppliers(suppData);
 
-            // Load supplier transactions
+            // Load supplier transactions (exclude deleted)
             const { data: transData } = await supabase
                 .from('supplier_transactions')
                 .select('*')
+                .is('deleted_at', null)
                 .order('created_at', { ascending: false });
             if (transData) setSupplierTransactions(transData);
         };

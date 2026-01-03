@@ -87,7 +87,7 @@ const Dashboard = () => {
                         Here's what's happening today
                     </p>
                 </div>
-                <Link to="/quick-create" style={{ textDecoration: 'none' }}>
+                <Link to="/dashboard/quick-create" style={{ textDecoration: 'none' }}>
                     <button style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -140,7 +140,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Wallet Balance */}
-                <Link to="/wallet" style={{ textDecoration: 'none' }}>
+                <Link to="/dashboard/wallet" style={{ textDecoration: 'none' }}>
                     <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
                         <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                             <Wallet size={20} />
@@ -156,7 +156,7 @@ const Dashboard = () => {
                 </Link>
 
                 {/* Pending Work Orders */}
-                <Link to="/work-orders" style={{ textDecoration: 'none' }}>
+                <Link to="/dashboard/work-orders" style={{ textDecoration: 'none' }}>
                     <div className="stat-card" style={{ cursor: 'pointer', borderColor: overdueWorkOrders > 0 ? 'var(--danger)' : undefined }}>
                         <div className="stat-icon" style={{ background: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)' }}>
                             <ClipboardList size={20} />
@@ -319,7 +319,7 @@ const Dashboard = () => {
                                 </div>
                             ))}
                             {govtFeeCards.length > 5 && (
-                                <Link to="/wallet" style={{ textAlign: 'center', color: 'var(--accent)', fontSize: '0.875rem' }}>
+                                <Link to="/dashboard/wallet" style={{ textAlign: 'center', color: 'var(--accent)', fontSize: '0.875rem' }}>
                                     View all {govtFeeCards.length} cards →
                                 </Link>
                             )}
@@ -328,7 +328,7 @@ const Dashboard = () => {
                         <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
                             <Wallet size={40} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
                             <p>No wallet cards yet</p>
-                            <Link to="/wallet" style={{ color: 'var(--accent)', fontSize: '0.875rem' }}>Add your first card →</Link>
+                            <Link to="/dashboard/wallet" style={{ color: 'var(--accent)', fontSize: '0.875rem' }}>Add your first card →</Link>
                         </div>
                     )}
                 </Card>
@@ -359,7 +359,7 @@ const Dashboard = () => {
                         Quick Sale
                     </button>
 
-                    <Link to="/invoices" style={{ textDecoration: 'none' }}>
+                    <Link to="/dashboard/invoices" style={{ textDecoration: 'none' }}>
                         <button style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -381,7 +381,7 @@ const Dashboard = () => {
                         </button>
                     </Link>
 
-                    <Link to="/work-orders" style={{ textDecoration: 'none' }}>
+                    <Link to="/dashboard/work-orders" style={{ textDecoration: 'none' }}>
                         <button style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -403,7 +403,7 @@ const Dashboard = () => {
                         </button>
                     </Link>
 
-                    <Link to="/wallet" style={{ textDecoration: 'none' }}>
+                    <Link to="/dashboard/wallet" style={{ textDecoration: 'none' }}>
                         <button style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -425,7 +425,7 @@ const Dashboard = () => {
                         </button>
                     </Link>
 
-                    <Link to="/transactions" style={{ textDecoration: 'none' }}>
+                    <Link to="/dashboard/transactions" style={{ textDecoration: 'none' }}>
                         <button style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -447,7 +447,7 @@ const Dashboard = () => {
                         </button>
                     </Link>
 
-                    <Link to="/customers" style={{ textDecoration: 'none' }}>
+                    <Link to="/dashboard/customers" style={{ textDecoration: 'none' }}>
                         <button style={{
                             display: 'flex',
                             flexDirection: 'column',

@@ -234,7 +234,7 @@ const WorkOrderCreate = () => {
                     beneficiary_nationality: ben.nationality
                 });
             }
-            navigate('/work-orders');
+            navigate('/dashboard/work-orders');
         } else {
             // Single work order
             const beneficiaryData = sameAsCustomer ? {
@@ -253,7 +253,7 @@ const WorkOrderCreate = () => {
             });
 
             if (result && result.success) {
-                navigate('/work-orders');
+                navigate('/dashboard/work-orders');
             } else {
                 alert(`Failed to create work order: ${result?.error || 'Unknown error'}\n\nTIP: Did you run the SQL migration script for the new columns?`);
             }
@@ -265,7 +265,7 @@ const WorkOrderCreate = () => {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                 <button
-                    onClick={() => navigate('/work-orders')}
+                    onClick={() => navigate('/dashboard/work-orders')}
                     style={{
                         background: 'var(--bg-card)',
                         border: '1px solid var(--border)',
@@ -638,7 +638,7 @@ const WorkOrderCreate = () => {
 
             {/* Submit */}
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <Button variant="secondary" onClick={() => navigate('/work-orders')}>Cancel</Button>
+                <Button variant="secondary" onClick={() => navigate('/dashboard/work-orders')}>Cancel</Button>
                 <Button onClick={handleSubmit}>
                     <Save size={16} />
                     {beneficiaryMode === 'multiple' && count > 1 ? `Create ${count} Work Orders` : 'Create Work Order'}

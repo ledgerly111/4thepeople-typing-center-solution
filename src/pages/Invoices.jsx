@@ -308,7 +308,7 @@ const Invoices = () => {
                             <Button variant="secondary" onClick={() => setShowBulkModal(true)}>
                                 <Plus size={16} /> Bulk Create
                             </Button>
-                            <Button onClick={() => navigate('/invoices/create')}>
+                            <Button onClick={() => navigate('/dashboard/invoices/create')}>
                                 <Plus size={16} /> New Invoice
                             </Button>
                         </div>

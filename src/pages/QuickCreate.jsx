@@ -232,7 +232,7 @@ const QuickCreate = () => {
 
                 if (result?.success || result?.id) {
                     alert('Work Order created successfully!');
-                    navigate('/work-orders');
+                    navigate('/dashboard/work-orders');
                 } else {
                     alert(`Failed to create work order: ${result?.error || 'Unknown error'}`);
                 }
@@ -299,7 +299,7 @@ const QuickCreate = () => {
             <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem' }}>
                 <InvoicePreview
                     invoice={createdDocument}
-                    onClose={() => navigate('/invoices')}
+                    onClose={() => navigate('/dashboard/invoices')}
                 />
             </div>
         );

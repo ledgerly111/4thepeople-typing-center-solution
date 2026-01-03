@@ -1381,3 +1381,80 @@
     display: none !important;
   }
 }
+
+/* ========================================
+   PAYMENT VOUCHER PRINT STYLES
+   ======================================== */
+@media print {
+
+  /* Hide all app UI */
+  body>* {
+    visibility: hidden;
+  }
+
+  /* Show the modal and voucher */
+  .modal-overlay,
+  .modal-overlay * {
+    visibility: visible !important;
+  }
+
+  /* Reset modal positioning for print */
+  .modal-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .modal {
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    background: white !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  .modal-header {
+    display: none !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+  }
+
+  /* Style the payment voucher for print */
+  #payment-voucher {
+    visibility: visible !important;
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 180mm !important;
+    margin: 0 auto !important;
+    padding: 10mm !important;
+    border: 2px solid #333 !important;
+    border-radius: 0 !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #payment-voucher * {
+    color: black !important;
+    visibility: visible !important;
+  }
+
+  #payment-voucher h2 {
+    color: #E65100 !important;
+  }
+
+  /* Hide buttons in voucher footer during print */
+  #payment-voucher+div,
+  .modal-footer {
+    display: none !important;
+  }
+}

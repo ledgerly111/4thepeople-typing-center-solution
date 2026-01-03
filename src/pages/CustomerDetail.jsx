@@ -27,7 +27,7 @@ const CustomerDetail = () => {
             .single();
 
         if (!customerData) {
-            navigate('/customers');
+            navigate('/dashboard/customers');
             return;
         }
 
@@ -96,7 +96,7 @@ const CustomerDetail = () => {
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <button
-                        onClick={() => navigate('/customers')}
+                        onClick={() => navigate('/dashboard/customers')}
                         style={{
                             background: 'var(--bg-accent)',
                             border: '1px solid var(--border)',
@@ -117,10 +117,10 @@ const CustomerDetail = () => {
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <Button onClick={() => navigate('/work-orders/create', { state: { customer } })}>
+                    <Button onClick={() => navigate('/dashboard/work-orders/create', { state: { customer } })}>
                         <Plus size={16} /> New Work Order
                     </Button>
-                    <Button variant="secondary" onClick={() => navigate('/invoices/create', { state: { customer } })}>
+                    <Button variant="secondary" onClick={() => navigate('/dashboard/invoices/create', { state: { customer } })}>
                         <Plus size={16} /> New Invoice
                     </Button>
                 </div>

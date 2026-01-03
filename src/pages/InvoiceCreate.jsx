@@ -261,7 +261,7 @@ const InvoiceCreate = () => {
                 }
 
                 alert(`Successfully created ${createdCount} invoices!`);
-                navigate('/invoices');
+                navigate('/dashboard/invoices');
                 return;
             }
         } else {
@@ -292,7 +292,7 @@ const InvoiceCreate = () => {
             <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem' }}>
                 <InvoicePreview
                     invoice={createdInvoice}
-                    onClose={() => navigate('/invoices')}
+                    onClose={() => navigate('/dashboard/invoices')}
                 />
             </div>
         );
@@ -303,7 +303,7 @@ const InvoiceCreate = () => {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                 <button
-                    onClick={() => navigate('/invoices')}
+                    onClick={() => navigate('/dashboard/invoices')}
                     style={{
                         background: 'var(--bg-card)', border: '1px solid var(--border)',
                         borderRadius: '8px', padding: '0.5rem', cursor: 'pointer',
@@ -615,7 +615,7 @@ const InvoiceCreate = () => {
 
             {/* Submit */}
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <Button variant="secondary" onClick={() => navigate('/invoices')}>Cancel</Button>
+                <Button variant="secondary" onClick={() => navigate('/dashboard/invoices')}>Cancel</Button>
                 <Button onClick={handleSubmit}>
                     <Printer size={16} />
                     {beneficiaryMode === 'multiple' && !bulkCombined && count > 1

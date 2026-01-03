@@ -495,7 +495,7 @@ const WorkOrders = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <h2 style={{ margin: 0 }}>Work Orders</h2>
-                <Button onClick={() => navigate('/work-orders/create')}>
+                <Button onClick={() => navigate('/dashboard/work-orders/create')}>
                     <Plus size={16} /> New Work Order
                 </Button>
             </div>
@@ -910,7 +910,7 @@ const WorkOrders = () => {
                                     </Button>
                                     <Button onClick={() => {
                                         setShowConfirmModal(false);
-                                        navigate('/invoices');
+                                        navigate('/dashboard/invoices');
                                     }}>
                                         Go to Invoices
                                     </Button>

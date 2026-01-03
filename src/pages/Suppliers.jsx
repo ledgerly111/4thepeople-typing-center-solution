@@ -4,7 +4,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Select from '../components/ui/Select';
 import { supabase } from '../services/supabase';
-import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Building, Phone, Mail, DollarSign, CheckCircle, History, FileText } from 'lucide-react';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -16,6 +16,9 @@ const Suppliers = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [supplierTransactions, setSupplierTransactions] = useState([]);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -245,6 +248,42 @@ const Suppliers = () => {
         return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
+    // Load transactions for a specific supplier
+    const loadSupplierTransactions = async (supplierId) => {
+        setLoadingTransactions(true);
+        setSupplierTransactions([]);
+
+        if (!supabase) {
+            setLoadingTransactions(false);
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('supplier_transactions')
+            .select('*')
+            .eq('supplier_id', supplierId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.warn('Error loading transactions:', error.message);
+        } else {
+            setSupplierTransactions(data || []);
+        }
+        setLoadingTransactions(false);
+    };
+
+    // Open history modal
+    const openHistoryModal = async (supplier) => {
+        setSelectedSupplier(supplier);
+        await loadSupplierTransactions(supplier.id);
+        setShowHistoryModal(true);
+    };
+
+    // Calculate total paid to supplier
+    const getTotalPaid = () => {
+        return supplierTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+    };
+
     return (
         <div>
             {/* Header */}
@@ -362,6 +401,14 @@ const Suppliers = () => {
                                                         style={{ color: 'var(--success)' }}
                                                     >
                                                         <DollarSign size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => openHistoryModal(supplier)}
+                                                        title="Payment History"
+                                                        style={{ color: 'var(--warning)' }}
+                                                    >
+                                                        <History size={14} />
                                                     </button>
                                                     <button className="btn-icon" onClick={() => openEditModal(supplier)} title="Edit">
                                                         <Edit size={14} />
@@ -734,6 +781,119 @@ const Suppliers = () => {
                             placeholder="Any additional notes..."
                             rows={2}
                         />
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Transaction History Modal */}
+            <Modal
+                isOpen={showHistoryModal}
+                onClose={() => setShowHistoryModal(false)}
+                title={`Payment History - ${selectedSupplier?.name || 'Supplier'}`}
+            >
+                <div>
+                    {/* Total Summary */}
+                    <div style={{
+                        padding: '1rem',
+                        background: 'linear-gradient(135deg, rgba(255, 138, 0, 0.15) 0%, rgba(255, 138, 0, 0.05) 100%)',
+                        borderRadius: '8px',
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Paid</div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--accent)' }}>
+                                AED {getTotalPaid().toFixed(2)}
+                            </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{supplierTransactions.length} transactions</div>
+                        </div>
+                    </div>
+
+                    {/* Transactions List */}
+                    {loadingTransactions ? (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            Loading transactions...
+                        </div>
+                    ) : supplierTransactions.length > 0 ? (
+                        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                            {supplierTransactions.map((t, index) => (
+                                <div
+                                    key={t.id || index}
+                                    style={{
+                                        padding: '1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        marginBottom: '0.75rem',
+                                        background: 'var(--bg-primary)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                        <div style={{ fontWeight: '600', color: 'var(--success)' }}>
+                                            AED {parseFloat(t.amount || 0).toFixed(2)}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            {formatDate(t.payment_date || t.created_at)}
+                                        </div>
+                                    </div>
+
+                                    {t.invoice_number && (
+                                        <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                                            <FileText size={12} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />
+                                            Invoice: <strong>{t.invoice_number}</strong>
+                                        </div>
+                                    )}
+
+                                    {t.description && (
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                                            {t.description}
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        <span style={{
+                                            padding: '0.125rem 0.375rem',
+                                            background: 'var(--bg-accent)',
+                                            borderRadius: '4px'
+                                        }}>
+                                            {t.payment_method || 'Cash'}
+                                        </span>
+                                        <span style={{
+                                            padding: '0.125rem 0.375rem',
+                                            background: 'rgba(34, 197, 94, 0.1)',
+                                            color: 'var(--success)',
+                                            borderRadius: '4px'
+                                        }}>
+                                            {t.status || 'Paid'}
+                                        </span>
+                                    </div>
+
+                                    {t.notes && (
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                                            📝 {t.notes}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            No transactions recorded yet for this supplier
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                        <Button variant="secondary" onClick={() => setShowHistoryModal(false)}>Close</Button>
+                        <Button onClick={() => {
+                            setShowHistoryModal(false);
+                            openPaymentModal(selectedSupplier);
+                        }}>
+                            <DollarSign size={16} /> Record Payment
+                        </Button>
                     </div>
                 </div>
             </Modal>

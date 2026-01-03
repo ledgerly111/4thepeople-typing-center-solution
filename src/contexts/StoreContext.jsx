@@ -215,7 +215,7 @@ export const StoreProvider = ({ children }) => {
 
     // Soft delete invoice with audit logging AND reversal of card deductions
     const softDeleteInvoice = async (invoiceId, reason = '') => {
-        // First, get the invoice to check if it has a work_order_id
+        // First, get the invoice to check if it has card deductions
         const { data: invoice, error: fetchError } = await supabase
             .from('invoices')
             .select('*')
@@ -227,19 +227,19 @@ export const StoreProvider = ({ children }) => {
             return { success: false, error: 'Invoice not found' };
         }
 
-        // If invoice has a work_order_id, find and reverse any card deductions
+        let refundedAmount = 0;
+        let refundedCardName = '';
+
+        // Case 1: If invoice has a work_order_id, find and reverse any card deductions via work order
         if (invoice.work_order_id) {
-            // Find card transactions linked to this work order
             const { data: cardTxs } = await supabase
                 .from('card_transactions')
                 .select('*')
                 .eq('work_order_id', invoice.work_order_id)
                 .eq('transaction_type', 'Deduction');
 
-            // Refund each card transaction
             if (cardTxs && cardTxs.length > 0) {
                 for (const tx of cardTxs) {
-                    // Get current card balance
                     const { data: card } = await supabase
                         .from('govt_fee_cards')
                         .select('*')
@@ -251,7 +251,6 @@ export const StoreProvider = ({ children }) => {
                         const refundAmount = parseFloat(tx.amount) || 0;
                         const newBalance = currentBalance + refundAmount;
 
-                        // Create refund transaction
                         await supabase.from('card_transactions').insert([{
                             card_id: tx.card_id,
                             transaction_type: 'Refund',
@@ -262,7 +261,6 @@ export const StoreProvider = ({ children }) => {
                             work_order_id: invoice.work_order_id
                         }]);
 
-                        // Update card balance
                         await supabase
                             .from('govt_fee_cards')
                             .update({
@@ -270,7 +268,48 @@ export const StoreProvider = ({ children }) => {
                                 last_transaction_date: new Date().toISOString()
                             })
                             .eq('id', tx.card_id);
+
+                        refundedAmount += refundAmount;
+                        refundedCardName = card.card_name;
                     }
+                }
+            }
+        }
+
+        // Case 2: If invoice has a direct govt_fee_card_id (no work order), refund that
+        if (invoice.govt_fee_card_id && !invoice.work_order_id) {
+            const govtFee = parseFloat(invoice.govt_fee) || 0;
+
+            if (govtFee > 0) {
+                const { data: card } = await supabase
+                    .from('govt_fee_cards')
+                    .select('*')
+                    .eq('id', invoice.govt_fee_card_id)
+                    .single();
+
+                if (card) {
+                    const currentBalance = parseFloat(card.balance) || 0;
+                    const newBalance = currentBalance + govtFee;
+
+                    await supabase.from('card_transactions').insert([{
+                        card_id: invoice.govt_fee_card_id,
+                        transaction_type: 'Refund',
+                        amount: govtFee,
+                        balance_before: currentBalance,
+                        balance_after: newBalance,
+                        description: `Refund: Invoice #${invoiceId} deleted`
+                    }]);
+
+                    await supabase
+                        .from('govt_fee_cards')
+                        .update({
+                            balance: newBalance,
+                            last_transaction_date: new Date().toISOString()
+                        })
+                        .eq('id', invoice.govt_fee_card_id);
+
+                    refundedAmount = govtFee;
+                    refundedCardName = card.card_name;
                 }
             }
         }
@@ -295,7 +334,12 @@ export const StoreProvider = ({ children }) => {
 
         // Remove from local state
         setInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
-        return { success: true, refunded: true };
+        return {
+            success: true,
+            refunded: refundedAmount > 0,
+            refundedAmount,
+            refundedCardName
+        };
     };
 
     // Get deleted invoices for audit log

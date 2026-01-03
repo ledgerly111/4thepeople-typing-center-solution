@@ -22,6 +22,7 @@ import CustomerDetail from './pages/CustomerDetail';
 import QuickCreate from './pages/QuickCreate';
 import AIDocumentVerification from './pages/AIDocumentVerification';
 import Landing from './pages/Landing';
+import Suppliers from './pages/Suppliers';
 import './App.css';
 
 // ===========================================
@@ -49,6 +50,7 @@ function App() {
                 <Route path="quick-create" element={<QuickCreate />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="customers/:id" element={<CustomerDetail />} />
+                <Route path="suppliers" element={<Suppliers />} />
                 <Route path="services" element={<Services />} />
                 <Route path="invoices" element={<Invoices />} />
                 <Route path="invoices/create" element={<InvoiceCreate />} />

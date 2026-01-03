@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Briefcase, FileText, ClipboardList, Receipt, BarChart3, List, Wallet, Settings, Zap, Shield, User } from 'lucide-react';
+import { Home, Users, Briefcase, FileText, ClipboardList, Receipt, BarChart3, List, Wallet, Settings, Zap, Shield, User, Truck } from 'lucide-react';
 
 const Sidebar = () => {
     const navItems = [
         { icon: Home, label: 'Dashboard', path: '/dashboard' }, // Absolute path to dashboard
         { icon: Zap, label: 'Quick Create', path: 'quick-create' },
         { icon: Users, label: 'Customers', path: 'customers' },
+        { icon: Truck, label: 'Suppliers', path: 'suppliers' },
         { icon: Briefcase, label: 'Services', path: 'services' },
         { icon: FileText, label: 'Invoices', path: 'invoices' },
         { icon: ClipboardList, label: 'Work Orders', path: 'work-orders' },

@@ -7,7 +7,7 @@ import InvoicePreview from '../components/ui/InvoicePreview';
 import SearchableSelect from '../components/ui/SearchableSelect';
 import Select from '../components/ui/Select';
 import { useStore } from '../contexts/StoreContext';
-import { Plus, Edit, Trash2, FileText, CheckCircle, Clock, AlertCircle, Search, Filter, Receipt } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, CheckCircle, Clock, AlertCircle, Search, Filter, Receipt, Eye } from 'lucide-react';
 
 const WorkOrders = () => {
     const navigate = useNavigate();
@@ -41,6 +41,8 @@ const WorkOrders = () => {
     const [selectedCardId, setSelectedCardId] = useState('');
     const [showInvoiceExistsModal, setShowInvoiceExistsModal] = useState(false);
     const [existingInvoiceId, setExistingInvoiceId] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
     // Fetch cards on mount
     useEffect(() => {
@@ -596,6 +598,17 @@ const WorkOrders = () => {
                                         <td style={{ textAlign: 'right', fontWeight: '600' }}>AED {order.total}</td>
                                         <td>
                                             <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                <button
+                                                    className="btn-icon"
+                                                    onClick={() => {
+                                                        setSelectedOrderDetails(order);
+                                                        setShowDetailsModal(true);
+                                                    }}
+                                                    title="View Details"
+                                                    style={{ color: 'var(--info)' }}
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
                                                 <button className="btn-icon" onClick={() => openEditModal(order)} title="Edit">
                                                     <Edit size={14} />
                                                 </button>
@@ -1209,6 +1222,149 @@ const WorkOrders = () => {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Work Order Details Modal */}
+            <Modal
+                isOpen={showDetailsModal}
+                onClose={() => {
+                    setShowDetailsModal(false);
+                    setSelectedOrderDetails(null);
+                }}
+                title={`Work Order #${selectedOrderDetails?.id || ''}`}
+            >
+                {selectedOrderDetails && (
+                    <div style={{ padding: '0.5rem' }}>
+                        {/* Status & Priority Row */}
+                        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                            {getStatusBadge(selectedOrderDetails.status)}
+                            {getPriorityBadge(selectedOrderDetails.priority)}
+                            {(selectedOrderDetails.invoice_id || selectedOrderDetails.invoiceId) && (
+                                <span style={{
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '4px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '600',
+                                    color: 'var(--success)',
+                                    backgroundColor: 'rgba(34, 197, 94, 0.1)'
+                                }}>
+                                    📄 Invoice #{selectedOrderDetails.invoice_id || selectedOrderDetails.invoiceId}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Customer Info */}
+                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                            <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: 'var(--accent)' }}>👤 Customer</h4>
+                            <div style={{ fontWeight: '600' }}>{selectedOrderDetails.customer_name || selectedOrderDetails.customerName || 'Walk-in'}</div>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                📱 {selectedOrderDetails.customer_mobile || selectedOrderDetails.customerMobile || '-'}
+                            </div>
+                            {(selectedOrderDetails.customer_email || selectedOrderDetails.customerEmail) && (
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                    ✉️ {selectedOrderDetails.customer_email || selectedOrderDetails.customerEmail}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Beneficiary */}
+                        {(selectedOrderDetails.beneficiary_name || selectedOrderDetails.beneficiaryName) && (
+                            <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                                <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: 'var(--accent)' }}>🎯 Beneficiary</h4>
+                                <div style={{ fontWeight: '600' }}>
+                                    {selectedOrderDetails.beneficiary_name || selectedOrderDetails.beneficiaryName}
+                                </div>
+                                {(selectedOrderDetails.beneficiary_id_number || selectedOrderDetails.beneficiaryIdNumber) && (
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                        ID: {selectedOrderDetails.beneficiary_id_number || selectedOrderDetails.beneficiaryIdNumber}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Sponsor */}
+                        {selectedOrderDetails.sponsor_name && (
+                            <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                                <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: 'var(--accent)' }}>🏢 Sponsor</h4>
+                                <div style={{ fontWeight: '600' }}>{selectedOrderDetails.sponsor_name}</div>
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                    {selectedOrderDetails.sponsor_type} {selectedOrderDetails.sponsor_id && `• ID: ${selectedOrderDetails.sponsor_id}`}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Reference & Portal */}
+                        {(selectedOrderDetails.reference_number || selectedOrderDetails.portal_type) && (
+                            <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', marginBottom: '1rem' }}>
+                                <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: 'var(--accent)' }}>🔖 Reference</h4>
+                                {selectedOrderDetails.reference_number && (
+                                    <div style={{ fontWeight: '600' }}>Ref: {selectedOrderDetails.reference_number}</div>
+                                )}
+                                {selectedOrderDetails.portal_type && (
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Portal: {selectedOrderDetails.portal_type}</div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Services */}
+                        <div style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '1rem' }}>
+                            <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', color: 'var(--accent)' }}>📋 Services</h4>
+                            {(selectedOrderDetails.services || []).map((s, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: i < selectedOrderDetails.services.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                                    <span>{s.name}</span>
+                                    <span style={{ fontWeight: '600' }}>AED {parseFloat(s.price || s.serviceFee + s.govtFee || 0).toFixed(2)}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Fee Summary */}
+                        <div style={{ padding: '1rem', background: 'linear-gradient(135deg, rgba(255, 138, 0, 0.1) 0%, rgba(255, 138, 0, 0.05) 100%)', borderRadius: '8px', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span>Service Fee:</span>
+                                <span>AED {parseFloat(selectedOrderDetails.service_fee || selectedOrderDetails.serviceFee || 0).toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span>Government Fee:</span>
+                                <span>AED {parseFloat(selectedOrderDetails.govt_fee || selectedOrderDetails.govtFee || 0).toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', fontSize: '1.1rem', paddingTop: '0.5rem', borderTop: '2px solid var(--accent)' }}>
+                                <span>Total:</span>
+                                <span style={{ color: 'var(--accent)' }}>AED {parseFloat(selectedOrderDetails.total || 0).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        {/* Dates */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <div style={{ padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Due Date</div>
+                                <div style={{ fontWeight: '600' }}>{formatDate(selectedOrderDetails.due_date || selectedOrderDetails.dueDate)}</div>
+                            </div>
+                            <div style={{ padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Created</div>
+                                <div style={{ fontWeight: '600' }}>{formatDate(selectedOrderDetails.created_at || selectedOrderDetails.createdAt)}</div>
+                            </div>
+                        </div>
+
+                        {/* Notes */}
+                        {selectedOrderDetails.notes && (
+                            <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                                <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', color: 'var(--accent)' }}>📝 Notes</h4>
+                                <div style={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap' }}>{selectedOrderDetails.notes}</div>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                            <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>Close</Button>
+                            <Button onClick={() => {
+                                setShowDetailsModal(false);
+                                openEditModal(selectedOrderDetails);
+                            }}>
+                                <Edit size={16} /> Edit
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

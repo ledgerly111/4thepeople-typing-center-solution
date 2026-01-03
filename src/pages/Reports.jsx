@@ -1,14 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../contexts/StoreContext';
+import { supabase } from '../services/supabase';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import {
     TrendingUp, TrendingDown, DollarSign, Receipt, Calendar, Clock,
-    BarChart3, PieChart, Users, ClipboardList, Wallet, FileText, Download
+    BarChart3, PieChart, Users, ClipboardList, Wallet, FileText, Download, Truck
 } from 'lucide-react';
 
 const Reports = () => {
     const { invoices, expenses, workOrders, govtFeeCards, customers, taxEnabled, TAX_RATE } = useStore();
+    const [supplierTransactions, setSupplierTransactions] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [reportType, setReportType] = useState('daily');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
@@ -34,6 +37,28 @@ const Reports = () => {
 
     const dateRange = getDateRange();
 
+    // Load suppliers and their transactions
+    useEffect(() => {
+        const loadSupplierData = async () => {
+            if (!supabase) return;
+
+            // Load suppliers
+            const { data: suppData } = await supabase
+                .from('suppliers')
+                .select('*')
+                .order('name');
+            if (suppData) setSuppliers(suppData);
+
+            // Load supplier transactions
+            const { data: transData } = await supabase
+                .from('supplier_transactions')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (transData) setSupplierTransactions(transData);
+        };
+        loadSupplierData();
+    }, []);
+
     // Filter data by date range
     const filteredInvoices = useMemo(() => {
         return invoices.filter(inv => {
@@ -55,6 +80,31 @@ const Reports = () => {
             return date >= dateRange.from && date <= dateRange.to;
         });
     }, [workOrders, dateRange.from, dateRange.to]);
+
+    // Filter supplier payments by date
+    const filteredSupplierPayments = useMemo(() => {
+        return supplierTransactions.filter(t => {
+            const date = t.payment_date || t.created_at?.split('T')[0];
+            return date >= dateRange.from && date <= dateRange.to;
+        });
+    }, [supplierTransactions, dateRange.from, dateRange.to]);
+
+    // Supplier expense stats
+    const supplierStats = useMemo(() => {
+        const totalPaid = filteredSupplierPayments.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+        // Group by supplier
+        const bySupplier = filteredSupplierPayments.reduce((acc, t) => {
+            const supplier = suppliers.find(s => s.id === t.supplier_id);
+            const name = supplier?.name || `Supplier #${t.supplier_id}`;
+            if (!acc[name]) acc[name] = { amount: 0, count: 0 };
+            acc[name].amount += parseFloat(t.amount || 0);
+            acc[name].count++;
+            return acc;
+        }, {});
+
+        return { totalPaid, bySupplier, count: filteredSupplierPayments.length };
+    }, [filteredSupplierPayments, suppliers]);
 
     // Calculate comprehensive stats
     const stats = useMemo(() => {
@@ -483,6 +533,48 @@ const Reports = () => {
                                 ))
                         ) : (
                             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No expenses</div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* Supplier Payments */}
+                <Card title="Supplier Payments">
+                    <div style={{ padding: '1rem' }}>
+                        {/* Total Summary */}
+                        <div style={{
+                            padding: '0.75rem',
+                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                            borderRadius: '8px',
+                            marginBottom: '1rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Truck size={20} style={{ color: 'var(--danger)' }} />
+                                <span style={{ fontWeight: '600' }}>Total Paid to Suppliers</span>
+                            </div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--danger)' }}>
+                                AED {supplierStats.totalPaid.toFixed(2)}
+                            </div>
+                        </div>
+
+                        {/* Breakdown by Supplier */}
+                        {Object.entries(supplierStats.bySupplier).length > 0 ? (
+                            Object.entries(supplierStats.bySupplier)
+                                .sort(([, a], [, b]) => b.amount - a.amount)
+                                .slice(0, 5)
+                                .map(([supplier, data]) => (
+                                    <div key={supplier} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
+                                        <div>
+                                            <span>{supplier}</span>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{data.count} payment(s)</div>
+                                        </div>
+                                        <span style={{ fontWeight: '600', color: 'var(--danger)' }}>AED {data.amount.toFixed(2)}</span>
+                                    </div>
+                                ))
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>No supplier payments in this period</div>
                         )}
                     </div>
                 </Card>

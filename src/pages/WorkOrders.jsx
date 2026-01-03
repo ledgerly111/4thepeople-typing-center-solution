@@ -39,6 +39,8 @@ const WorkOrders = () => {
     const [amountReceived, setAmountReceived] = useState('');
     const [paymentType, setPaymentType] = useState('Cash');
     const [selectedCardId, setSelectedCardId] = useState('');
+    const [showInvoiceExistsModal, setShowInvoiceExistsModal] = useState(false);
+    const [existingInvoiceId, setExistingInvoiceId] = useState(null);
 
     // Fetch cards on mount
     useEffect(() => {
@@ -221,15 +223,9 @@ const WorkOrders = () => {
 
         // Check if invoice already generated
         if (order.invoiceId || order.invoice_id) {
-            // Show notification that invoice exists
-            alert(`✅ Invoice Already Generated\n\nInvoice #${order.invoiceId || order.invoice_id}\nStatus: Paid\n\nOpening invoice preview...`);
-
-            // View existing invoice
-            const invoice = invoices.find(inv => inv.id === (order.invoiceId || order.invoice_id));
-            if (invoice) {
-                setGeneratedInvoice(invoice);
-                setShowInvoicePreview(true);
-            }
+            // Show modal with option to view invoice
+            setExistingInvoiceId(order.invoiceId || order.invoice_id);
+            setShowInvoiceExistsModal(true);
             return;
         }
 
@@ -1154,6 +1150,53 @@ const WorkOrders = () => {
                     }}
                 />
             )}
+
+            {/* Invoice Already Exists Modal */}
+            <Modal
+                isOpen={showInvoiceExistsModal}
+                onClose={() => setShowInvoiceExistsModal(false)}
+                title="Invoice Already Generated"
+            >
+                <div style={{ padding: '1rem', textAlign: 'center' }}>
+                    <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        background: 'rgba(34, 197, 94, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 1.5rem'
+                    }}>
+                        <CheckCircle size={40} style={{ color: 'var(--success)' }} />
+                    </div>
+
+                    <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.25rem' }}>
+                        ✅ Invoice #{existingInvoiceId}
+                    </h3>
+                    <p style={{ margin: '0 0 1.5rem', color: 'var(--text-muted)' }}>
+                        This work order has already been invoiced.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setShowInvoiceExistsModal(false)}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowInvoiceExistsModal(false);
+                                navigate(`/dashboard/invoices`);
+                            }}
+                        >
+                            <FileText size={16} />
+                            View in Invoices
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

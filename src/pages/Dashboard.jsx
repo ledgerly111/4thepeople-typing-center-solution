@@ -3,10 +3,15 @@ import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import QuickSale from '../components/ui/QuickSale';
 import { useStore } from '../contexts/StoreContext';
-import { Plus, TrendingUp, Users, FileText, Zap, List, DollarSign, Clock, AlertCircle, Eye, ClipboardList, Wallet, TrendingDown } from 'lucide-react';
+import {
+    Plus, TrendingUp, Users, FileText, Zap, DollarSign, Clock,
+    AlertCircle, Eye, ClipboardList, Wallet, ArrowRight,
+    Calendar, Receipt, BarChart3
+} from 'lucide-react';
 
 const Dashboard = () => {
     const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false);
+    const [hoveredBar, setHoveredBar] = useState(null);
     const {
         getTodaysSales,
         getRecentTransactions,
@@ -17,7 +22,6 @@ const Dashboard = () => {
         invoices,
         quickSales,
         addQuickSale,
-        customers,
         workOrders,
         govtFeeCards,
         fetchGovtFeeCards
@@ -32,14 +36,19 @@ const Dashboard = () => {
     const pendingCount = getPendingCount();
     const pendingWorkOrders = getPendingWorkOrdersCount();
     const overdueWorkOrders = getOverdueWorkOrdersCount();
-    const totalTransactions = invoices.length + quickSales.length;
     const recentTransactions = getRecentTransactions(5);
-
-    // Calculate total card balance
     const totalCardBalance = govtFeeCards.reduce((sum, card) => sum + parseFloat(card.balance || 0), 0);
     const activeCards = govtFeeCards.filter(c => c.status === 'Active');
 
-    // Helper to format date as YYYY-MM-DD in local timezone (not UTC)
+    // Get time-based greeting
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
+
+    // Helper to format date as YYYY-MM-DD in local timezone
     const formatLocalDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -53,20 +62,22 @@ const Dashboard = () => {
         for (let i = 6; i >= 0; i--) {
             const date = new Date();
             date.setDate(date.getDate() - i);
-            const dateStr = formatLocalDate(date); // Use local date, not UTC
+            const dateStr = formatLocalDate(date);
             const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const fullDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
             const daySales = invoices
                 .filter(inv => inv.date === dateStr && inv.status === 'Paid')
                 .reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
 
-            days.push({ day: dayName, amount: daySales, date: dateStr });
+            days.push({ day: dayName, amount: daySales, date: dateStr, fullDate });
         }
         return days;
     };
 
     const last7Days = getLast7DaysSales();
     const maxSale = Math.max(...last7Days.map(d => d.amount), 1);
+    const weeklyTotal = last7Days.reduce((sum, d) => sum + d.amount, 0);
 
     const handleQuickSaleComplete = (sale) => {
         addQuickSale(sale);
@@ -79,28 +90,60 @@ const Dashboard = () => {
         return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
     };
 
+    // Today's date formatted
+    const todayFormatted = new Date().toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
+
     return (
-        <div className="dashboard" style={{ paddingBottom: '2rem' }}>
+        <div className="dashboard fade-in" style={{ paddingBottom: '2rem' }}>
             <QuickSale
                 isOpen={isQuickSaleOpen}
                 onClose={() => setIsQuickSaleOpen(false)}
                 onComplete={handleQuickSaleComplete}
             />
 
-            {/* Welcome Header with Quick Create Button */}
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            {/* Welcome Header */}
+            <div style={{
+                marginBottom: '2rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                flexWrap: 'wrap',
+                gap: '1rem'
+            }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Welcome back! 👋</h1>
-                    <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                        Here's what's happening today
-                    </p>
+                    <h1 style={{
+                        margin: 0,
+                        fontSize: '1.75rem',
+                        fontWeight: '700',
+                        background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>
+                        {getGreeting()}! 👋
+                    </h1>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginTop: '0.5rem',
+                        color: 'var(--text-muted)',
+                        fontSize: '0.875rem'
+                    }}>
+                        <Calendar size={14} />
+                        {todayFormatted}
+                    </div>
                 </div>
                 <Link to="/dashboard/quick-create" style={{ textDecoration: 'none' }}>
                     <button style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        padding: '0.75rem 1.5rem',
+                        padding: '0.875rem 1.75rem',
                         background: 'linear-gradient(135deg, var(--accent) 0%, #f59e0b 100%)',
                         color: 'white',
                         border: 'none',
@@ -108,8 +151,9 @@ const Dashboard = () => {
                         cursor: 'pointer',
                         fontWeight: '600',
                         fontSize: '1rem',
-                        boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
-                        transition: 'transform 0.2s, box-shadow 0.2s'
+                        fontFamily: 'inherit',
+                        boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
+                        transition: 'all 0.2s ease'
                     }}>
                         <Zap size={20} />
                         Quick Create
@@ -117,61 +161,194 @@ const Dashboard = () => {
                 </Link>
             </div>
 
-            {/* Stats Grid - 4 columns */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            {/* Stats Grid */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+                marginBottom: '2rem'
+            }}>
                 {/* Today's Sales */}
-                <div className="stat-card">
-                    <div className="stat-icon">
-                        <DollarSign size={20} />
+                <div style={{
+                    background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-accent) 100%)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '16px',
+                    padding: '1.5rem',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: '-20px',
+                        right: '-20px',
+                        width: '80px',
+                        height: '80px',
+                        background: 'var(--accent)',
+                        opacity: 0.1,
+                        borderRadius: '50%'
+                    }} />
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, var(--accent) 0%, #f59e0b 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        marginBottom: '1rem'
+                    }}>
+                        <DollarSign size={24} />
                     </div>
-                    <div className="stat-label">Today's Sales</div>
-                    <div className="stat-value">
-                        <span className="currency">AED </span>{todaySales.toLocaleString()}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                        Today's Sales
                     </div>
-                    <div className="stat-change">
-                        <TrendingUp size={12} /> Paid transactions
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        <span style={{ fontSize: '1rem', color: 'var(--accent)' }}>AED </span>
+                        {todaySales.toLocaleString()}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--success)' }}>
+                        <TrendingUp size={12} />
+                        Paid today
                     </div>
                 </div>
 
                 {/* Pending Credit */}
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--warning)' }}>
-                        <Clock size={20} />
+                <div style={{
+                    background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-accent) 100%)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '16px',
+                    padding: '1.5rem',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: '-20px',
+                        right: '-20px',
+                        width: '80px',
+                        height: '80px',
+                        background: 'var(--warning)',
+                        opacity: 0.1,
+                        borderRadius: '50%'
+                    }} />
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'var(--warning)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        marginBottom: '1rem'
+                    }}>
+                        <Clock size={24} />
                     </div>
-                    <div className="stat-label">Pending Credit</div>
-                    <div className="stat-value">
-                        <span className="currency">AED </span>{pendingAmount.toLocaleString()}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                        Pending Credit
                     </div>
-                    <div className="stat-change warning">
-                        <AlertCircle size={12} /> {pendingCount} invoices
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        <span style={{ fontSize: '1rem', color: 'var(--warning)' }}>AED </span>
+                        {pendingAmount.toLocaleString()}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--warning)' }}>
+                        <AlertCircle size={12} />
+                        {pendingCount} unpaid invoices
                     </div>
                 </div>
 
                 {/* Wallet Balance */}
                 <Link to="/dashboard/wallet" style={{ textDecoration: 'none' }}>
-                    <div className="stat-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
-                        <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                            <Wallet size={20} />
+                    <div style={{
+                        background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-accent) 100%)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '-20px',
+                            right: '-20px',
+                            width: '80px',
+                            height: '80px',
+                            background: '#8b5cf6',
+                            opacity: 0.1,
+                            borderRadius: '50%'
+                        }} />
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            marginBottom: '1rem'
+                        }}>
+                            <Wallet size={24} />
                         </div>
-                        <div className="stat-label">Wallet Balance</div>
-                        <div className="stat-value" style={{ color: '#8b5cf6' }}>
-                            <span className="currency">AED </span>{totalCardBalance.toLocaleString()}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                            Wallet Balance
                         </div>
-                        <div className="stat-change">
-                            <Wallet size={12} /> {activeCards.length} active cards
+                        <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#8b5cf6' }}>
+                            <span style={{ fontSize: '1rem' }}>AED </span>
+                            {totalCardBalance.toLocaleString()}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <Wallet size={12} />
+                            {activeCards.length} active cards
                         </div>
                     </div>
                 </Link>
 
-                {/* Pending Work Orders */}
+                {/* Work Orders */}
                 <Link to="/dashboard/work-orders" style={{ textDecoration: 'none' }}>
-                    <div className="stat-card" style={{ cursor: 'pointer', borderColor: overdueWorkOrders > 0 ? 'var(--danger)' : undefined }}>
-                        <div className="stat-icon" style={{ background: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                            <ClipboardList size={20} />
+                    <div style={{
+                        background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-accent) 100%)',
+                        border: `1px solid ${overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--border)'}`,
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '-20px',
+                            right: '-20px',
+                            width: '80px',
+                            height: '80px',
+                            background: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)',
+                            opacity: 0.1,
+                            borderRadius: '50%'
+                        }} />
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
+                            background: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            marginBottom: '1rem'
+                        }}>
+                            <ClipboardList size={24} />
                         </div>
-                        <div className="stat-label">Pending Orders</div>
-                        <div className="stat-value">{pendingWorkOrders}</div>
-                        <div className="stat-change" style={{ color: overdueWorkOrders > 0 ? 'var(--danger)' : undefined }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                            Pending Orders
+                        </div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                            {pendingWorkOrders}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem', fontSize: '0.75rem', color: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)' }}>
                             {overdueWorkOrders > 0 ? (
                                 <><AlertCircle size={12} /> {overdueWorkOrders} overdue!</>
                             ) : (
@@ -183,66 +360,138 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 {/* Weekly Sales Chart */}
-                <Card title="Weekly Sales Overview">
-                    <div style={{ padding: '1rem 0' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '160px', marginBottom: '0.5rem' }}>
-                            {last7Days.map((day, idx) => (
-                                <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div style={{
-                                        width: '100%',
-                                        background: day.amount > 0 ? 'var(--accent)' : 'var(--border)',
-                                        borderRadius: '4px 4px 0 0',
-                                        height: `${Math.max((day.amount / maxSale) * 140, 4)}px`,
-                                        minHeight: '4px',
-                                        transition: 'height 0.3s'
-                                    }} title={`AED ${day.amount.toLocaleString()}`} />
-                                </div>
-                            ))}
+                <div style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '16px',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <BarChart3 size={18} style={{ color: 'var(--accent)' }} />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Weekly Sales</h3>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {last7Days.map((day, idx) => (
-                                <div key={idx} style={{
-                                    flex: 1,
-                                    textAlign: 'center',
-                                    fontSize: '0.75rem',
-                                    color: 'var(--text-muted)'
-                                }}>
-                                    {day.day}
-                                </div>
-                            ))}
-                        </div>
-                        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                            <span style={{ color: 'var(--text-muted)' }}>Weekly Total:</span>
-                            <span style={{ fontWeight: '700', color: 'var(--accent)' }}>
-                                AED {last7Days.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
-                            </span>
+                        <div style={{
+                            fontSize: '0.875rem',
+                            fontWeight: '700',
+                            color: 'var(--accent)',
+                            background: 'var(--bg-accent)',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '20px'
+                        }}>
+                            AED {weeklyTotal.toLocaleString()}
                         </div>
                     </div>
-                </Card>
+
+                    {/* Chart */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', height: '150px', marginBottom: '1rem' }}>
+                        {last7Days.map((day, idx) => (
+                            <div
+                                key={idx}
+                                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}
+                                onMouseEnter={() => setHoveredBar(idx)}
+                                onMouseLeave={() => setHoveredBar(null)}
+                            >
+                                {hoveredBar === idx && day.amount > 0 && (
+                                    <div style={{
+                                        background: 'var(--text-primary)',
+                                        color: 'var(--bg-card)',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: '600',
+                                        marginBottom: '0.25rem',
+                                        whiteSpace: 'nowrap'
+                                    }}>
+                                        AED {day.amount.toLocaleString()}
+                                    </div>
+                                )}
+                                <div style={{
+                                    width: '100%',
+                                    background: day.amount > 0
+                                        ? hoveredBar === idx
+                                            ? 'linear-gradient(180deg, var(--accent) 0%, #f59e0b 100%)'
+                                            : 'linear-gradient(180deg, var(--accent) 0%, rgba(249, 115, 22, 0.6) 100%)'
+                                        : 'var(--border)',
+                                    borderRadius: '6px 6px 0 0',
+                                    height: `${Math.max((day.amount / maxSale) * 120, 6)}px`,
+                                    minHeight: '6px',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'pointer'
+                                }} />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Day Labels */}
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        {last7Days.map((day, idx) => (
+                            <div key={idx} style={{
+                                flex: 1,
+                                textAlign: 'center',
+                                fontSize: '0.7rem',
+                                color: idx === 6 ? 'var(--accent)' : 'var(--text-muted)',
+                                fontWeight: idx === 6 ? '600' : '400'
+                            }}>
+                                {day.day}
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
                 {/* Recent Activity */}
-                <Card title="Recent Activity">
+                <div style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '16px',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Receipt size={18} style={{ color: 'var(--accent)' }} />
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>Recent Activity</h3>
+                        </div>
+                        <Link to="/dashboard/transactions" style={{ fontSize: '0.75rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            View all <ArrowRight size={12} />
+                        </Link>
+                    </div>
+
                     {recentTransactions.length > 0 ? (
-                        <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {recentTransactions.map((item) => (
                                 <div key={item.id} style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    padding: '0.75rem 0',
-                                    borderBottom: '1px solid var(--border)'
+                                    padding: '0.75rem',
+                                    background: 'var(--bg-accent)',
+                                    borderRadius: '10px',
+                                    transition: 'all 0.2s ease'
                                 }}>
-                                    <div>
-                                        <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{item.customer}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                            {item.service} · {formatDate(item.date)}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                        <div style={{ fontWeight: '600', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {item.customer}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                                            {item.service} • {formatDate(item.date)}
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontWeight: '600', color: 'var(--accent)' }}>AED {item.amount}</div>
-                                        <span className={`badge ${item.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
+                                    <div style={{ textAlign: 'right', marginLeft: '1rem' }}>
+                                        <div style={{ fontWeight: '700', color: 'var(--accent)', fontSize: '0.9rem' }}>
+                                            AED {item.amount}
+                                        </div>
+                                        <span style={{
+                                            display: 'inline-block',
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '20px',
+                                            fontSize: '0.65rem',
+                                            fontWeight: '600',
+                                            marginTop: '0.25rem',
+                                            background: item.status === 'Paid' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                            color: item.status === 'Paid' ? 'var(--success)' : 'var(--warning)'
+                                        }}>
                                             {item.status}
                                         </span>
                                     </div>
@@ -251,100 +500,22 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                            <FileText size={40} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                            <p>No recent activity</p>
+                            <FileText size={40} style={{ marginBottom: '0.5rem', opacity: 0.4 }} />
+                            <p style={{ margin: 0, fontSize: '0.875rem' }}>No recent activity</p>
                         </div>
                     )}
-                </Card>
+                </div>
             </div>
 
-            {/* Work Orders Summary + Card Balance Summary */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Work Orders Summary */}
-                <Card title="Work Order Status">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--warning)' }}>{pendingWorkOrders}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pending</div>
-                        </div>
-                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2rem', fontWeight: '700', color: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                                {overdueWorkOrders}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Overdue</div>
-                        </div>
-                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--success)' }}>
-                                {workOrders.filter(w => w.status === 'Completed').length}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Completed</div>
-                        </div>
-                        <div style={{ padding: '1rem', background: 'var(--bg-accent)', borderRadius: '8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2rem', fontWeight: '700' }}>{workOrders.length}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total</div>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Wallet Cards */}
-                <Card title="Wallet Cards">
-                    {govtFeeCards.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {govtFeeCards.slice(0, 5).map(card => (
-                                <div key={card.id} style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '0.75rem 1rem',
-                                    background: 'var(--bg-accent)',
-                                    borderRadius: '8px',
-                                    borderLeft: `4px solid ${card.card_type === 'ICP' ? '#667eea' : card.card_type === 'MOHRE' ? '#f5576c' : card.card_type === 'GDRFA' ? '#4facfe' : '#43e97b'}`
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <div>
-                                            <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {card.card_name}
-                                                {card.linked_to_govt_fees && (
-                                                    <span style={{
-                                                        fontSize: '0.6rem',
-                                                        background: 'var(--success)',
-                                                        color: 'white',
-                                                        padding: '0.15rem 0.4rem',
-                                                        borderRadius: '4px',
-                                                        fontWeight: '500'
-                                                    }}>LINKED</span>
-                                                )}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{card.card_type}</div>
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        fontWeight: '700',
-                                        color: parseFloat(card.balance) > 500 ? 'var(--success)' : parseFloat(card.balance) < 100 ? 'var(--danger)' : 'var(--warning)'
-                                    }}>
-                                        AED {parseFloat(card.balance || 0).toFixed(2)}
-                                    </div>
-                                </div>
-                            ))}
-                            {govtFeeCards.length > 5 && (
-                                <Link to="/dashboard/wallet" style={{ textAlign: 'center', color: 'var(--accent)', fontSize: '0.875rem' }}>
-                                    View all {govtFeeCards.length} cards →
-                                </Link>
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                            <Wallet size={40} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                            <p>No wallet cards yet</p>
-                            <Link to="/dashboard/wallet" style={{ color: 'var(--accent)', fontSize: '0.875rem' }}>Add your first card →</Link>
-                        </div>
-                    )}
-                </Card>
-            </div>
-
-            {/* Quick Actions - At Bottom */}
-            <Card title="Quick Actions">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+            {/* Quick Actions */}
+            <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: '16px',
+                padding: '1.5rem'
+            }}>
+                <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: '600' }}>Quick Actions</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem' }}>
                     <button
                         onClick={() => setIsQuickSaleOpen(true)}
                         style={{
@@ -352,18 +523,19 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
-                            background: 'var(--success)',
+                            padding: '1.25rem 0.75rem',
+                            background: 'linear-gradient(135deg, var(--success) 0%, #22c55e 100%)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '12px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}
                     >
-                        <Zap size={24} />
+                        <Zap size={22} />
                         Quick Sale
                     </button>
 
@@ -373,18 +545,19 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
+                            padding: '1.25rem 0.75rem',
                             width: '100%',
-                            background: 'var(--accent)',
+                            background: 'linear-gradient(135deg, var(--accent) 0%, #f59e0b 100%)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '12px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}>
-                            <Plus size={24} />
+                            <Plus size={22} />
                             New Invoice
                         </button>
                     </Link>
@@ -395,18 +568,19 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
+                            padding: '1.25rem 0.75rem',
                             width: '100%',
-                            background: '#8b5cf6',
+                            background: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '12px',
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}>
-                            <ClipboardList size={24} />
+                            <ClipboardList size={22} />
                             Work Orders
                         </button>
                     </Link>
@@ -417,7 +591,7 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
+                            padding: '1.25rem 0.75rem',
                             width: '100%',
                             background: 'var(--bg-accent)',
                             color: 'var(--text-primary)',
@@ -426,10 +600,11 @@ const Dashboard = () => {
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}>
-                            <Wallet size={24} />
-                            Top Up Card
+                            <Wallet size={22} />
+                            Wallet
                         </button>
                     </Link>
 
@@ -439,7 +614,7 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
+                            padding: '1.25rem 0.75rem',
                             width: '100%',
                             background: 'var(--bg-accent)',
                             color: 'var(--text-primary)',
@@ -448,10 +623,11 @@ const Dashboard = () => {
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}>
-                            <Eye size={24} />
-                            View Sales
+                            <Eye size={22} />
+                            Sales
                         </button>
                     </Link>
 
@@ -461,7 +637,7 @@ const Dashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            padding: '1.5rem 1rem',
+                            padding: '1.25rem 0.75rem',
                             width: '100%',
                             background: 'var(--bg-accent)',
                             color: 'var(--text-primary)',
@@ -470,14 +646,15 @@ const Dashboard = () => {
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                             fontWeight: '600',
-                            fontSize: '0.875rem'
+                            fontSize: '0.8rem',
+                            transition: 'all 0.2s ease'
                         }}>
-                            <Users size={24} />
+                            <Users size={22} />
                             Customers
                         </button>
                     </Link>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 };

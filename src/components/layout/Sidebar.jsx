@@ -1,11 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, Briefcase, FileText, ClipboardList, Receipt, BarChart3, List, Wallet, Settings, Zap, Shield, User, Truck } from 'lucide-react';
+import { Home, Users, Briefcase, FileText, ClipboardList, Receipt, BarChart3, List, Wallet, Settings, Shield, User, Truck } from 'lucide-react';
 
 const Sidebar = () => {
     const navItems = [
-        { icon: Home, label: 'Dashboard', path: '/dashboard' }, // Absolute path to dashboard
-        { icon: Zap, label: 'Quick Create', path: 'quick-create' },
+        { icon: Home, label: 'Dashboard', path: '/dashboard' },
         { icon: Users, label: 'Customers', path: 'customers' },
         { icon: Truck, label: 'Suppliers', path: 'suppliers' },
         { icon: Briefcase, label: 'Services', path: 'services' },
@@ -19,10 +18,6 @@ const Sidebar = () => {
         { icon: Settings, label: 'Settings', path: 'settings' },
     ];
 
-
-
-
-
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
@@ -35,7 +30,7 @@ const Sidebar = () => {
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        end={item.path === '/dashboard'} // Only match exactly for Dashboard
+                        end={item.path === '/dashboard'}
                         className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                     >
                         <item.icon size={20} />

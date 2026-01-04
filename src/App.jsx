@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { StoreProvider } from './contexts/StoreContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { AlertProvider } from './contexts/AlertContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
@@ -58,36 +59,38 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <StoreProvider>
-          <Router>
-            <Routes>
-              {/* Landing Page - Public */}
-              <Route path="/" element={<Landing />} />
+          <AlertProvider>
+            <Router>
+              <Routes>
+                {/* Landing Page - Public */}
+                <Route path="/" element={<Landing />} />
 
-              {/* Login route - always available */}
-              <Route path="/login" element={<Login />} />
+                {/* Login route - always available */}
+                <Route path="/login" element={<Login />} />
 
-              {/* Main app routes - ERP Dashboard */}
-              <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="quick-create" element={<QuickCreate />} />
-                <Route path="customers" element={<Customers />} />
-                <Route path="customers/:id" element={<CustomerDetail />} />
-                <Route path="suppliers" element={<Suppliers />} />
-                <Route path="services" element={<Services />} />
-                <Route path="invoices" element={<Invoices />} />
-                <Route path="invoices/create" element={<InvoiceCreate />} />
-                <Route path="work-orders" element={<WorkOrders />} />
-                <Route path="work-orders/create" element={<WorkOrderCreate />} />
-                <Route path="ai-verify" element={<AIDocumentVerification />} />
-                <Route path="wallet" element={<Wallet />} />
-                <Route path="expenses" element={<Expenses />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="super-admin" element={<SuperAdmin />} />
-              </Route>
-            </Routes>
-          </Router>
+                {/* Main app routes - ERP Dashboard */}
+                <Route path="/dashboard" element={<DashboardLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="quick-create" element={<QuickCreate />} />
+                  <Route path="customers" element={<Customers />} />
+                  <Route path="customers/:id" element={<CustomerDetail />} />
+                  <Route path="suppliers" element={<Suppliers />} />
+                  <Route path="services" element={<Services />} />
+                  <Route path="invoices" element={<Invoices />} />
+                  <Route path="invoices/create" element={<InvoiceCreate />} />
+                  <Route path="work-orders" element={<WorkOrders />} />
+                  <Route path="work-orders/create" element={<WorkOrderCreate />} />
+                  <Route path="ai-verify" element={<AIDocumentVerification />} />
+                  <Route path="wallet" element={<Wallet />} />
+                  <Route path="expenses" element={<Expenses />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="super-admin" element={<SuperAdmin />} />
+                </Route>
+              </Routes>
+            </Router>
+          </AlertProvider>
         </StoreProvider>
       </AuthProvider>
     </ThemeProvider>

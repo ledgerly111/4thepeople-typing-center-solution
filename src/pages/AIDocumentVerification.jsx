@@ -87,11 +87,8 @@ const AIDocumentVerification = () => {
         <div style={{ padding: '1rem' }}>
             {/* Header */}
             <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <Shield size={28} style={{ color: 'var(--accent)' }} />
-                    <h2 style={{ margin: 0 }}>AI Document Verification</h2>
-                </div>
-                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                <h2 style={{ margin: 0 }}>AI Document Verification</h2>
+                <p style={{ margin: '0.5rem 0 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
                     Verify documents before government submission. All processing done locally - no documents saved.
                 </p>
             </div>

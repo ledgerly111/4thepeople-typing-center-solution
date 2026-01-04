@@ -268,10 +268,7 @@ const Reports = () => {
         <div className="page">
             {/* Header */}
             <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <BarChart3 size={28} style={{ color: 'var(--accent)' }} />
-                    Reports
-                </h1>
+                <h1 style={{ margin: 0 }}>Reports</h1>
                 <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0' }}>Detailed business analytics and insights</p>
             </div>
 

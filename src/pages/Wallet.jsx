@@ -151,10 +151,7 @@ const WalletPage = () => {
             {/* Header */}
             <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Wallet size={28} style={{ color: 'var(--accent)' }} />
-                        Wallet
-                    </h1>
+                    <h1 style={{ margin: 0 }}>Wallet</h1>
                     <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0' }}>Manage your government portal cards</p>
                 </div>
                 <Button onClick={() => setShowAddModal(true)}>

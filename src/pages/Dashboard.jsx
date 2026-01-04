@@ -119,12 +119,9 @@ const Dashboard = () => {
                         margin: 0,
                         fontSize: '1.75rem',
                         fontWeight: '700',
-                        background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
+                        color: 'var(--text-primary)'
                     }}>
-                        {getGreeting()}! 👋
+                        {getGreeting()}
                     </h1>
                     <div style={{
                         display: 'flex',

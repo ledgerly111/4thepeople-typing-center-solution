@@ -1806,3 +1806,71 @@ select:focus {
 .gap-2 {
   gap: 1rem;
 }
+
+/* ========================================
+   SCROLLABLE TABLE CONTAINER
+   ======================================== */
+.table-container {
+  max-height: 60vh;
+  min-height: 300px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--bg-accent);
+}
+
+.table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--bg-accent);
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* Sticky header for scrollable tables */
+.table-container .table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-card);
+}
+
+.table-container .table thead th {
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--border);
+}
+
+/* Scrollable list container (for non-table lists) */
+.list-container {
+  max-height: 60vh;
+  min-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--bg-accent);
+}
+
+.list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list-container::-webkit-scrollbar-track {
+  background: var(--bg-accent);
+  border-radius: 3px;
+}
+
+.list-container::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 3px;
+}

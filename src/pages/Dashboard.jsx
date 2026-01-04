@@ -439,6 +439,61 @@ const Dashboard = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* Work Order Mini Status */}
+                    <div style={{
+                        marginTop: '1.5rem',
+                        paddingTop: '1rem',
+                        borderTop: '1px solid var(--border)',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '0.75rem'
+                    }}>
+                        <div style={{ textAlign: 'center', padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--warning)' }}>{pendingWorkOrders}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Pending</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: overdueWorkOrders > 0 ? 'var(--danger)' : 'var(--success)' }}>{overdueWorkOrders}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Overdue</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '0.75rem', background: 'var(--bg-accent)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--success)' }}>{workOrders.filter(w => w.status === 'Completed').length}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Completed</div>
+                        </div>
+                    </div>
+
+                    {/* Wallet Cards Mini Preview */}
+                    {govtFeeCards.length > 0 && (
+                        <div style={{ marginTop: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>Wallet Cards</span>
+                                <Link to="/dashboard/wallet" style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>View all →</Link>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
+                                {govtFeeCards.slice(0, 3).map(card => (
+                                    <div key={card.id} style={{
+                                        flex: '1 0 auto',
+                                        minWidth: '100px',
+                                        padding: '0.5rem 0.75rem',
+                                        background: 'var(--bg-accent)',
+                                        borderRadius: '8px',
+                                        borderLeft: `3px solid ${card.card_type === 'ICP' ? '#667eea' : card.card_type === 'MOHRE' ? '#f5576c' : '#43e97b'}`
+                                    }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.card_name}</div>
+                                        <div style={{
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700',
+                                            marginTop: '0.15rem',
+                                            color: parseFloat(card.balance) > 500 ? 'var(--success)' : parseFloat(card.balance) < 100 ? 'var(--danger)' : 'var(--warning)'
+                                        }}>
+                                            AED {parseFloat(card.balance || 0).toFixed(0)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Recent Activity */}

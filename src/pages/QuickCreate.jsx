@@ -8,7 +8,7 @@ import IDScanner from '../components/ui/IDScanner';
 import { useStore } from '../contexts/StoreContext';
 import {
     Zap, User, UserPlus, Plus, Trash2, FileText, ClipboardList,
-    Receipt, DollarSign, Wallet, Printer, ArrowLeft, Save, Scan
+    Receipt, DollarSign, Wallet, Printer, ArrowLeft, Save, Scan, Layers, Edit3
 } from 'lucide-react';
 
 const QuickCreate = () => {
@@ -59,6 +59,14 @@ const QuickCreate = () => {
 
     // ID Scanner
     const [showScanner, setShowScanner] = useState(false);
+
+    // Bulk Create Modal
+    const [showBulkModal, setShowBulkModal] = useState(false);
+    const [bulkType, setBulkType] = useState('invoice'); // 'invoice' or 'work_order'
+    const [bulkCustomer, setBulkCustomer] = useState('');
+    const [bulkService, setBulkService] = useState('');
+    const [bulkBeneficiaries, setBulkBeneficiaries] = useState('');
+    const [bulkCombined, setBulkCombined] = useState(false);
 
     useEffect(() => {
         fetchGovtFeeCards();
@@ -185,7 +193,35 @@ const QuickCreate = () => {
             : beneficiary;
 
         try {
-            if (type === 'quotation') {
+            if (type === 'draft') {
+                // Draft is an invoice with status = 'Draft' for editing later
+                const result = await addInvoice({
+                    customer_name: customerData.name,
+                    customer_mobile: customerData.mobile,
+                    customer_email: customerData.email || '',
+                    beneficiary_name: beneficiaryData.name,
+                    beneficiary_id_number: beneficiaryData.id_number,
+                    reference_number: referenceNumber || null,
+                    service_fee: totals.serviceFee,
+                    govt_fee: totals.govtFee,
+                    total: totals.total,
+                    amount_received: 0,
+                    change: 0,
+                    status: 'Draft',
+                    payment_type: 'Credit',
+                    notes: notes,
+                    items: serviceItems,
+                    date: new Date().toISOString().split('T')[0]
+                });
+
+                if (result?.success) {
+                    alert('Draft saved successfully! You can edit it later from the Invoices page.');
+                    navigate('/dashboard/invoices');
+                } else {
+                    alert(`Failed to save draft: ${result?.error || 'Unknown error'}`);
+                }
+
+            } else if (type === 'quotation') {
                 // Quotation is same as invoice but with status = 'Quotation'
                 const result = await addInvoice({
                     customer_name: customerData.name,
@@ -345,6 +381,7 @@ const QuickCreate = () => {
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         {[
                             { id: 'quotation', label: 'Quotation', icon: FileText, color: '#6366f1' },
+                            { id: 'draft', label: 'Draft', icon: Edit3, color: '#64748b' },
                             { id: 'work_order', label: 'Work Order', icon: ClipboardList, color: '#f59e0b' },
                             { id: 'invoice', label: 'Invoice', icon: Receipt, color: 'var(--success)' }
                         ].map(type => (
@@ -725,6 +762,17 @@ const QuickCreate = () => {
                     </Button>
                 )}
 
+                {outputType === 'draft' && (
+                    <Button
+                        onClick={() => handleSubmit('draft')}
+                        disabled={!isValid() || isSubmitting}
+                        style={{ flex: 1, padding: '1rem', fontSize: '1rem', background: '#64748b' }}
+                    >
+                        <Edit3 size={20} />
+                        {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                    </Button>
+                )}
+
                 {outputType === 'work_order' && (
                     <Button
                         onClick={() => handleSubmit('work_order')}
@@ -746,6 +794,16 @@ const QuickCreate = () => {
                         {isSubmitting ? 'Creating...' : 'Create Invoice'}
                     </Button>
                 )}
+
+                {/* Bulk Create Button */}
+                <Button
+                    variant="secondary"
+                    onClick={() => setShowBulkModal(true)}
+                    style={{ padding: '1rem', fontSize: '1rem' }}
+                >
+                    <Layers size={20} />
+                    Bulk Create
+                </Button>
             </div>
 
             {/* ID Scanner Modal */}
@@ -755,8 +813,246 @@ const QuickCreate = () => {
                     onClose={() => setShowScanner(false)}
                 />
             )}
+
+            {/* Bulk Create Modal */}
+            {showBulkModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '1rem'
+                }}>
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: '16px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        maxHeight: '90vh',
+                        overflow: 'auto'
+                    }}>
+                        <div style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Layers size={24} style={{ color: 'var(--accent)' }} />
+                                    Bulk Create
+                                </h2>
+                                <button
+                                    onClick={() => setShowBulkModal(false)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)' }}
+                                >×</button>
+                            </div>
+
+                            {/* Type Toggle */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Create Type</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    <button
+                                        onClick={() => setBulkType('invoice')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.75rem',
+                                            border: bulkType === 'invoice' ? '2px solid var(--success)' : '2px solid var(--border)',
+                                            borderRadius: '8px',
+                                            background: bulkType === 'invoice' ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg)',
+                                            color: bulkType === 'invoice' ? 'var(--success)' : 'var(--text)',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <Receipt size={18} /> Invoice
+                                    </button>
+                                    <button
+                                        onClick={() => setBulkType('work_order')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.75rem',
+                                            border: bulkType === 'work_order' ? '2px solid #f59e0b' : '2px solid var(--border)',
+                                            borderRadius: '8px',
+                                            background: bulkType === 'work_order' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg)',
+                                            color: bulkType === 'work_order' ? '#f59e0b' : 'var(--text)',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem'
+                                        }}
+                                    >
+                                        <ClipboardList size={18} /> Work Order
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Customer Selection */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Customer (Paying Company)</label>
+                                <SearchableSelect
+                                    options={customerOptions}
+                                    value={bulkCustomer}
+                                    onChange={setBulkCustomer}
+                                    placeholder="Select customer..."
+                                />
+                            </div>
+
+                            {/* Service Selection */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Service</label>
+                                <SearchableSelect
+                                    options={serviceOptions}
+                                    value={bulkService}
+                                    onChange={setBulkService}
+                                    placeholder="Select service..."
+                                />
+                            </div>
+
+                            {/* Beneficiaries */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                    Beneficiaries (One per line: Name | ID/Passport)
+                                </label>
+                                <textarea
+                                    className="input"
+                                    rows={6}
+                                    placeholder="Ahmed Ali | 784-1234-5678901-2&#10;Mohammed Khan | A12345678&#10;Fatima Hassan"
+                                    value={bulkBeneficiaries}
+                                    onChange={(e) => setBulkBeneficiaries(e.target.value)}
+                                    style={{ resize: 'vertical', minHeight: '120px' }}
+                                />
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                    {bulkBeneficiaries.trim().split('\n').filter(l => l.trim()).length} beneficiaries
+                                </div>
+                            </div>
+
+                            {/* Combined Toggle (only for invoices) */}
+                            {bulkType === 'invoice' && (
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={bulkCombined}
+                                            onChange={(e) => setBulkCombined(e.target.checked)}
+                                            style={{ width: '18px', height: '18px' }}
+                                        />
+                                        <span style={{ fontSize: '0.875rem' }}>
+                                            Create as ONE combined invoice (otherwise creates separate invoices)
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {/* Buttons */}
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowBulkModal(false)}
+                                    style={{ flex: 1 }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={async () => {
+                                        if (!bulkCustomer) return alert('Please select a customer');
+                                        if (!bulkService) return alert('Please select a service');
+                                        if (!bulkBeneficiaries.trim()) return alert('Please enter beneficiaries');
+
+                                        const customer = customers.find(c => c.id === parseInt(bulkCustomer));
+                                        const service = services.find(s => s.id === parseInt(bulkService));
+                                        const lines = bulkBeneficiaries.trim().split('\n').filter(l => l.trim());
+                                        const serviceFee = parseFloat(service.service_fee || 0);
+                                        const govtFee = parseFloat(service.govt_fee || 0);
+                                        const total = serviceFee + govtFee;
+
+                                        setIsSubmitting(true);
+                                        let created = 0;
+
+                                        if (bulkType === 'work_order') {
+                                            for (const line of lines) {
+                                                const [bName, bId] = line.split('|').map(s => s.trim());
+                                                if (!bName) continue;
+                                                const res = await addWorkOrder({
+                                                    customer_name: customer?.name || 'Unknown',
+                                                    customer_mobile: customer?.mobile || '',
+                                                    beneficiary_name: bName,
+                                                    beneficiary_id_number: bId || null,
+                                                    service_fee: serviceFee,
+                                                    govt_fee: govtFee,
+                                                    total,
+                                                    status: 'Pending',
+                                                    services: [{ name: service.name, serviceFee, govtFee, price: total }],
+                                                    due_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                                                });
+                                                if (res?.success || res?.id) created++;
+                                            }
+                                            alert(`Created ${created} work orders!`);
+                                            navigate('/dashboard/work-orders');
+                                        } else {
+                                            if (bulkCombined) {
+                                                const items = lines.map(line => {
+                                                    const [bName, bId] = line.split('|').map(s => s.trim());
+                                                    return {
+                                                        name: `${service.name} - ${bName}${bId ? ` (${bId})` : ''}`,
+                                                        serviceFee, govtFee, price: total, beneficiaryName: bName, beneficiaryId: bId
+                                                    };
+                                                });
+                                                const res = await addInvoice({
+                                                    customer_name: customer?.name || 'Unknown',
+                                                    customer_mobile: customer?.mobile || '',
+                                                    beneficiary_name: `${items.length} beneficiaries`,
+                                                    service_fee: serviceFee * items.length,
+                                                    govt_fee: govtFee * items.length,
+                                                    total: total * items.length,
+                                                    amount_received: 0, status: 'Pending', payment_type: 'Credit',
+                                                    items, date: new Date().toISOString().split('T')[0]
+                                                });
+                                                if (res?.success) created = 1;
+                                            } else {
+                                                for (const line of lines) {
+                                                    const [bName, bId] = line.split('|').map(s => s.trim());
+                                                    if (!bName) continue;
+                                                    const res = await addInvoice({
+                                                        customer_name: customer?.name || 'Unknown',
+                                                        customer_mobile: customer?.mobile || '',
+                                                        beneficiary_name: bName,
+                                                        beneficiary_id_number: bId || null,
+                                                        service_fee: serviceFee, govt_fee: govtFee, total,
+                                                        amount_received: 0, status: 'Pending', payment_type: 'Credit',
+                                                        items: [{ name: service.name, serviceFee, govtFee, price: total }],
+                                                        date: new Date().toISOString().split('T')[0]
+                                                    });
+                                                    if (res?.success) created++;
+                                                }
+                                            }
+                                            alert(`Created ${bulkCombined ? '1 combined' : created} invoice${created !== 1 ? 's' : ''}!`);
+                                            navigate('/dashboard/invoices');
+                                        }
+
+                                        setIsSubmitting(false);
+                                        setShowBulkModal(false);
+                                        setBulkCustomer('');
+                                        setBulkService('');
+                                        setBulkBeneficiaries('');
+                                    }}
+                                    disabled={isSubmitting}
+                                    style={{ flex: 1, background: bulkType === 'work_order' ? '#f59e0b' : 'var(--accent)' }}
+                                >
+                                    {isSubmitting ? 'Creating...' : `Create ${bulkType === 'work_order' ? 'Work Orders' : 'Invoices'}`}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default QuickCreate;
+

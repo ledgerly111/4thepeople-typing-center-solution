@@ -344,7 +344,9 @@ const Invoices = () => {
                                     options={[
                                         { value: 'All', label: 'All Status' },
                                         { value: 'Paid', label: 'Paid' },
-                                        { value: 'Pending', label: 'Pending' }
+                                        { value: 'Pending', label: 'Pending' },
+                                        { value: 'Draft', label: 'Draft' },
+                                        { value: 'Quotation', label: 'Quotation' }
                                     ]}
                                     value={statusFilter}
                                     onChange={setStatusFilter}
@@ -384,7 +386,9 @@ const Invoices = () => {
                                                 </td>
                                                 <td>{inv.payment_type || inv.paymentType || 'Cash'}</td>
                                                 <td>
-                                                    <span className={`badge ${inv.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
+                                                    <span className={`badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Quotation' ? 'badge-info' : inv.status === 'Draft' ? 'badge-secondary' : 'badge-warning'}`}
+                                                        style={inv.status === 'Quotation' ? { background: '#6366f1', color: 'white' } : inv.status === 'Draft' ? { background: '#64748b', color: 'white' } : {}}
+                                                    >
                                                         {inv.status}
                                                     </span>
                                                 </td>
@@ -404,6 +408,16 @@ const Invoices = () => {
                                                                 onClick={() => updateInvoiceStatus(inv.id, 'Paid')}
                                                                 title="Mark as Paid"
                                                                 style={{ color: 'var(--success)' }}
+                                                            >
+                                                                <CheckCircle size={16} />
+                                                            </button>
+                                                        )}
+                                                        {(inv.status === 'Draft' || inv.status === 'Quotation') && (
+                                                            <button
+                                                                className="btn-icon"
+                                                                onClick={() => updateInvoiceStatus(inv.id, 'Pending')}
+                                                                title={inv.status === 'Draft' ? 'Finalize Draft' : 'Convert to Invoice'}
+                                                                style={{ color: '#6366f1' }}
                                                             >
                                                                 <CheckCircle size={16} />
                                                             </button>
@@ -629,7 +643,8 @@ const Invoices = () => {
                         </Button>
                     </Card>
                 </div>
-            )}
+            )
+            }
 
             {/* Thermal Print Modal */}
             <Modal

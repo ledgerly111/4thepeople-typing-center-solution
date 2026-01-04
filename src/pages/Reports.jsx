@@ -472,7 +472,7 @@ const Reports = () => {
 
                 {/* Payment Methods */}
                 <Card title="Payment Methods">
-                    <div style={{ padding: '1rem' }}>
+                    <div className="list-container" style={{ padding: '1rem', maxHeight: '250px' }}>
                         {Object.entries(stats.paymentMethods).length > 0 ? (
                             Object.entries(stats.paymentMethods)
                                 .sort(([, a], [, b]) => b.amount - a.amount)
@@ -530,7 +530,7 @@ const Reports = () => {
 
                 {/* Expense Categories */}
                 <Card title="Expense Categories">
-                    <div style={{ padding: '1rem' }}>
+                    <div className="list-container" style={{ padding: '1rem', maxHeight: '200px' }}>
                         {Object.entries(stats.expenseCategories).length > 0 ? (
                             Object.entries(stats.expenseCategories)
                                 .sort(([, a], [, b]) => b - a)
@@ -594,7 +594,7 @@ const Reports = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
                 {/* Top Customers */}
                 <Card title="Top Customers by Revenue">
-                    <div style={{ padding: '1rem' }}>
+                    <div className="list-container" style={{ padding: '1rem', maxHeight: '300px' }}>
                         {Object.entries(stats.customerStats).length > 0 ? (
                             Object.entries(stats.customerStats)
                                 .sort(([, a], [, b]) => b.revenue - a.revenue)
@@ -634,7 +634,7 @@ const Reports = () => {
 
                 {/* Outstanding by Customer */}
                 <Card title="Outstanding Receivables by Customer">
-                    <div style={{ padding: '1rem' }}>
+                    <div className="list-container" style={{ padding: '1rem', maxHeight: '300px' }}>
                         {Object.entries(receivables.byCustomer).length > 0 ? (
                             Object.entries(receivables.byCustomer)
                                 .sort(([, a], [, b]) => b.total - a.total)
